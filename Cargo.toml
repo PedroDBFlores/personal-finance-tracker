@@ -4,8 +4,46 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# CLI parsing
 clap = { version = "4.6.6", features = ["derive"] }
+
+# Error handling
 thiserror = "2.0.20"
+
+# Async runtime
 tokio = { version = "1.53.1", features = ["full"] }
+
+# Logging
 tracing = "0.1.44"
-tracing-subscriber = "0.3.23"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+# TUI framework
+ratatui = "0.28.0"
+crossterm = "0.28.1"
+
+# Database (SQLite)
+sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio", "uuid", "chrono"] }
+
+# Financial data types
+rust_decimal = "1.36.0"
+rust_decimal_macros = "1.36.0"
+
+# UUID generation
+uuid = { version = "1.10.0", features = ["v4", "serde"] }
+
+# Date/Time handling
+chrono = { version = "0.4.38", features = ["serde"] }
+
+# Serialization
+serde = { version = "1.0.209", features = ["derive"] }
+serde_json = "1.0.120"
+
+# Async trait support
+async-trait = "0.1.88"
+
+[dev-dependencies]
+# Mocking for TDD
+mockall = "0.13.0"
+
+# Async testing
+tokio-test = "0.4.4"
