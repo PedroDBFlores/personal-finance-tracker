@@ -4,8 +4,7 @@ import (
 	"math/big"
 	"testing"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 func TestNewAccount(t *testing.T) {
@@ -40,7 +39,7 @@ func TestCalculateBalance(t *testing.T) {
 
 	// Create movements for the account
 	creditValue := big.NewInt(100000) // $1000.00
-	debitValue := big.NewInt(50000)  // $500.00
+	debitValue := big.NewInt(50000)   // $500.00
 	movements := []Movement{
 		{
 			Id:          uuid.New(),

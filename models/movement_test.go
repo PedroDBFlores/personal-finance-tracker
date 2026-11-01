@@ -4,8 +4,7 @@ import (
 	"math/big"
 	"testing"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 func TestNewMovement(t *testing.T) {
@@ -53,7 +52,7 @@ func TestMovementDefaults(t *testing.T) {
 	value := big.NewInt(0)
 	movementType := Debit
 	date := time.Time{}
-	accountId := uuid.Nil
+	accountId := uuid.Nil()
 	tags := []uuid.UUID{}
 
 	movement := Movement{

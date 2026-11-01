@@ -54,12 +54,10 @@ func TestAccountRepository(t *testing.T) {
 
 		acc := findAccountInDb(t, db, id)
 		require.NotNil(t, acc)
-		require.Equal(t, &database.Account{
-			Id:        id,
-			Name:      "Random Bank",
-			Type:      string(models.Bank),
-			Currency:  "EUR",
-			CreatedAt: now,
-		}, acc)
+		require.Equal(t, id, acc.Id)
+		require.Equal(t, "Random Bank", acc.Name)
+		require.Equal(t, string(models.Bank), acc.Type)
+		require.Equal(t, "EUR", acc.Currency)
+		require.WithinDuration(t, now, acc.CreatedAt, 0)
 	})
 }
