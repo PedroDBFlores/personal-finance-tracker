@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // Movement represents

@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 // AccountType defines the type of account (Bank, Brokerage, CreditCard, etc.)
