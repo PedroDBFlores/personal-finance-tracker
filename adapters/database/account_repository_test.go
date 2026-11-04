@@ -68,67 +68,87 @@ func TestAccountRepository(t *testing.T) {
 		require.WithinDuration(t, now, acc.CreatedAt, 0)
 	})
 
-	t.Run("it gets an account by id", func(t *testing.T) {
-		db, err := getInMemoryDatabase(t, logger)
-		require.NoError(t, err)
-		repo := database.NewAccountRepository(db)
-		now := time.Now()
-		account := models.Account{
-			Name:      "Random Bank",
-			Type:      models.Bank,
-			Currency:  "EUR",
-			CreatedAt: now,
-		}
-		id, err := repo.Create(account)
-		require.NoError(t, err)
-		require.NotEqual(t, uuid.Nil(), id)
+	t.Run("create", func(t *testing.T) {
+		t.Run("it gets an account by id", func(t *testing.T) {
+			db, err := getInMemoryDatabase(t, logger)
+			require.NoError(t, err)
+			repo := database.NewAccountRepository(db)
+			now := time.Now()
+			account := models.Account{
+				Name:      "Random Bank",
+				Type:      models.Bank,
+				Currency:  "EUR",
+				CreatedAt: now,
+			}
+			id, err := repo.Create(account)
+			require.NoError(t, err)
+			require.NotEqual(t, uuid.Nil(), id)
 
-		acc, err := repo.Get(id)
+			acc, err := repo.Get(id)
 
-		require.NoError(t, err)
-		require.Equal(t, id, acc.Id)
-		require.Equal(t, "Random Bank", acc.Name)
-		require.Equal(t, models.Bank, acc.Type)
-		require.Equal(t, "EUR", acc.Currency)
-		require.WithinDuration(t, now, acc.CreatedAt, 0)
+			require.NoError(t, err)
+			require.Equal(t, id, acc.Id)
+			require.Equal(t, "Random Bank", acc.Name)
+			require.Equal(t, models.Bank, acc.Type)
+			require.Equal(t, "EUR", acc.Currency)
+			require.WithinDuration(t, now, acc.CreatedAt, 0)
+		})
+
+		t.Run("returns ResourceNotFoundError if the account doesn't exist", func(t *testing.T) {
+			db, err := getInMemoryDatabase(t, logger)
+			require.NoError(t, err)
+			repo := database.NewAccountRepository(db)
+
+			id := uuid.NewV7()
+			acc, err := repo.Get(id)
+			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", id)))
+			require.Nil(t, acc)
+		})
 	})
 
-	t.Run("returns ResourceNotFoundError if the account doesn't exist", func(t *testing.T) {
-		db, err := getInMemoryDatabase(t, logger)
-		require.NoError(t, err)
-		repo := database.NewAccountRepository(db)
+	t.Run("update", func(t *testing.T) {
+		t.Run("it updates an account", func(t *testing.T) {
+			db, err := getInMemoryDatabase(t, logger)
+			require.NoError(t, err)
+			repo := database.NewAccountRepository(db)
+			now := time.Now()
+			account := models.Account{
+				Name:      "Random Bank",
+				Type:      models.Bank,
+				Currency:  "EUR",
+				CreatedAt: now,
+			}
 
-		id := uuid.NewV7()
-		acc, err := repo.Get(id)
-		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("account", id.String()))
-		require.Nil(t, acc)
-	})
+			id, err := repo.Create(account)
+			require.NoError(t, err)
+			require.NotEqual(t, uuid.Nil(), id)
 
-	t.Run("it updates an account", func(t *testing.T) {
-		db, err := getInMemoryDatabase(t, logger)
-		require.NoError(t, err)
-		repo := database.NewAccountRepository(db)
-		now := time.Now()
-		account := models.Account{
-			Name:      "Random Bank",
-			Type:      models.Bank,
-			Currency:  "EUR",
-			CreatedAt: now,
-		}
+			acc, err := repo.Get(id)
+			require.NoError(t, err)
+			acc.Name = "Right Bank"
+			err = repo.Update(*acc)
+			require.NoError(t, err)
 
-		id, err := repo.Create(account)
-		require.NoError(t, err)
-		require.NotEqual(t, uuid.Nil(), id)
+			updatedAcc, err := repo.Get(id)
+			require.NoError(t, err)
+			require.Equal(t, "Right Bank", updatedAcc.Name)
+		})
 
-		acc, err := repo.Get(id)
-		require.NoError(t, err)
-		acc.Name = "Right Bank"
-		err = repo.Update(*acc)
-		require.NoError(t, err)
+		t.Run("returns ResourceNotFoundError if updating a non-existent account", func(t *testing.T) {
+			db, err := getInMemoryDatabase(t, logger)
+			require.NoError(t, err)
+			repo := database.NewAccountRepository(db)
 
-		updatedAcc, err := repo.Get(id)
-		require.NoError(t, err)
-		require.Equal(t, "Right Bank", updatedAcc.Name)
+			account := models.Account{
+				Id:        uuid.NewV7(),
+				Name:      "Non-existent Bank",
+				Type:      models.Bank,
+				Currency:  "EUR",
+				CreatedAt: time.Now(),
+			}
+			err = repo.Update(account)
+			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", account.Id)))
+		})
 	})
 
 	t.Run("lists all accounts", func(t *testing.T) {

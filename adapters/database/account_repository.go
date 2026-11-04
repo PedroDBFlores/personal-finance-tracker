@@ -2,7 +2,6 @@ package database
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 	"uuid"
@@ -52,8 +51,15 @@ func (a *AccountRepository) Create(account models.Account) (uuid.UUID, error) {
 }
 
 func (a *AccountRepository) Update(account models.Account) error {
+	key := accountKey(account.Id)
+	ok, err := IsKeyPresent(a.db, key)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", account.Id))
+	}
 	return a.db.Update(func(txn *badger.Txn) error {
-		key := accountKey(account.Id)
 		if _, err := txn.Get(key); err != nil {
 			return err
 		}
@@ -66,20 +72,8 @@ func (a *AccountRepository) Update(account models.Account) error {
 }
 
 func (a *AccountRepository) Get(id uuid.UUID) (*models.Account, error) {
-	var out Account
 	key := accountKey(id)
-	err := a.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
-		if err != nil {
-			if errors.Is(err, badger.ErrKeyNotFound) {
-				return app_errors.NewResourceNotFoundError("account", id.String())
-			}
-			return err
-		}
-		return item.Value(func(val []byte) error {
-			return json.Unmarshal(val, &out)
-		})
-	})
+	out, err := GetByKey[Account](a.db, key)
 	if err != nil {
 		return nil, err
 	}
@@ -88,23 +82,7 @@ func (a *AccountRepository) Get(id uuid.UUID) (*models.Account, error) {
 }
 
 func (a *AccountRepository) List() ([]models.Account, error) {
-	var accounts []Account
-	err := a.db.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.IteratorOptions{
-			Prefix: []byte(prefix),
-		})
-		defer it.Close()
-		for it.Rewind(); it.Valid(); it.Next() {
-			item := it.Item()
-			item.Value(func(val []byte) error {
-				var out Account
-				json.Unmarshal(val, &out)
-				accounts = append(accounts, out)
-				return nil
-			})
-		}
-		return nil
-	})
+	accounts, err := ListAllByKey[Account](a.db, []byte(prefix))
 	if err != nil {
 		return []models.Account{}, err
 	}
