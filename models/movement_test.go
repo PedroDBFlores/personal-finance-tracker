@@ -1,7 +1,6 @@
 package models
 
 import (
-	"math/big"
 	"testing"
 	"time"
 	"uuid"
@@ -10,12 +9,11 @@ import (
 func TestNewMovement(t *testing.T) {
 	id := uuid.New()
 	description := "Test Movement"
-	value := big.NewInt(10000) // $100.00
+	value := int64(10000) // $100.00
 	movementType := MovementTypeCredit
 	date := time.Now()
-	tags := []uuid.UUID{uuid.New(), uuid.New()}
 
-	movement := NewMovement(id, description, *value, movementType, date, tags)
+	movement := NewMovement(id, description, value, movementType, date)
 
 	if movement.Id != id {
 		t.Errorf("Expected Id %v, got %v", id, movement.Id)
@@ -23,7 +21,7 @@ func TestNewMovement(t *testing.T) {
 	if movement.Description != description {
 		t.Errorf("Expected Description %s, got %s", description, movement.Description)
 	}
-	if movement.Value.Cmp(value) != 0 {
+	if movement.Value != value {
 		t.Errorf("Expected Value %v, got %v", value, movement.Value)
 	}
 	if movement.Type != movementType {
@@ -32,32 +30,21 @@ func TestNewMovement(t *testing.T) {
 	if !movement.Date.Equal(date) {
 		t.Errorf("Expected Date %v, got %v", date, movement.Date)
 	}
-
-	if len(movement.Tags) != len(tags) {
-		t.Errorf("Expected Tags length %d, got %d", len(tags), len(movement.Tags))
-	}
-	for i, tag := range tags {
-		if movement.Tags[i] != tag {
-			t.Errorf("Expected Tag at index %d to be %v, got %v", i, tag, movement.Tags[i])
-		}
-	}
 }
 
 func TestMovementDefaults(t *testing.T) {
 	id := uuid.New()
 	description := "Test Movement"
-	value := big.NewInt(0)
+	value := int64(0)
 	movementType := MovementTypeDebit
 	date := time.Time{}
-	tags := []uuid.UUID{}
 
 	movement := Movement{
 		Id:          id,
 		Description: description,
-		Value:       *value,
+		Value:       value,
 		Type:        movementType,
 		Date:        date,
-		Tags:        tags,
 	}
 
 	if movement.Id != id {
@@ -66,13 +53,13 @@ func TestMovementDefaults(t *testing.T) {
 	if movement.Description != description {
 		t.Errorf("Expected Description %s, got %s", description, movement.Description)
 	}
-	if movement.Value.Cmp(value) != 0 {
+	if movement.Value != value {
 		t.Errorf("Expected Value %v, got %v", value, movement.Value)
 	}
 	if movement.Type != movementType {
 		t.Errorf("Expected Type %s, got %s", movementType, movement.Type)
 	}
-	if len(movement.Tags) != len(tags) {
-		t.Errorf("Expected Tags length %d, got %d", len(tags), len(movement.Tags))
+	if !movement.Date.Equal(date) {
+		t.Errorf("Expected Date %v, got %v", date, movement.Date)
 	}
 }

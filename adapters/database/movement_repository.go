@@ -11,12 +11,11 @@ import (
 )
 
 type movement struct {
-	id           uuid.UUID   `json:"id"`
-	description  string      `json:"description"`
-	value        big.Int     `json:"value"`
-	movementType string      `json:"type"`
-	date         time.Time   `json:"date"`
-	tags         []uuid.UUID `json:"tags"`
+	Id           uuid.UUID `json:"id"`
+	Description  string    `json:"description"`
+	Value        big.Int   `json:"value"`
+	MovementType string    `json:"type"`
+	Date         time.Time `json:"date"`
 }
 
 const movementKeyPrefix = "account:%s:movement"

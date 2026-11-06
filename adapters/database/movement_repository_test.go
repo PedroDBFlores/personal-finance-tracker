@@ -3,7 +3,6 @@ package database_test
 import (
 	"fmt"
 	"log/slog"
-	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -44,10 +43,9 @@ func TestMovementRepository(t *testing.T) {
 		movement := models.NewMovement(
 			uuid.New(),
 			"Test Movement",
-			*big.NewInt(1000),
+			int64(1000),
 			models.MovementTypeDebit,
 			time.Now(),
-			[]uuid.UUID{},
 		)
 		id, err := repo.Create(accountId, movement)
 		require.NoError(t, err)
@@ -56,7 +54,7 @@ func TestMovementRepository(t *testing.T) {
 		mov := findMovementInDb(t, db, accountId, id)
 		require.NotNil(t, mov)
 		require.Equal(t, accountId, uuid.MustParse((*mov)["accountId"].(string)))
-		require.Equal(t, string(models.MovementTypeCredit), (*mov)["type"])
+		require.Equal(t, string(models.MovementTypeDebit), (*mov)["type"])
 		require.Equal(t, 1000, (*mov)["amount"])
 		require.Equal(t, "USD", (*mov)["currency"])
 		dateParsed, err := time.Parse(time.RFC3339, (*mov)["date"].(string))
