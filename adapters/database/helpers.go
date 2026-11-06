@@ -7,6 +7,8 @@ import (
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func IsKeyPresent(db *badger.DB, key []byte) (bool, error) {
@@ -29,7 +31,8 @@ func GetByKey[T any](db *badger.DB, key []byte) (T, error) {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
 			if errors.Is(err, badger.ErrKeyNotFound) {
-				typeName := reflect.TypeOf((*T)(nil)).Elem().Name()
+				typeName := reflect.TypeFor[T]().Name()
+				typeName = cases.Title(language.English).String(typeName)
 				return app_errors.NewResourceNotFoundError(typeName, string(key))
 			}
 			return err

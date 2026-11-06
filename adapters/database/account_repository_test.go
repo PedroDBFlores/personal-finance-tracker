@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func findAccountInDb(t *testing.T, db *badger.DB, id uuid.UUID) *database.Account {
+func findAccountInDb(t *testing.T, db *badger.DB, id uuid.UUID) *map[string]any {
 	t.Helper()
 	key := fmt.Appendf(nil, "account:%s", id)
-	out, err := database.GetByKey[*database.Account](db, key)
+	out, err := database.GetByKey[*map[string]any](db, key)
 	if err != nil {
 		t.Fatalf("failed to get account by key: %v", err)
 	}
@@ -45,11 +45,13 @@ func TestAccountRepository(t *testing.T) {
 
 		acc := findAccountInDb(t, db, id)
 		require.NotNil(t, acc)
-		require.Equal(t, id, acc.Id)
-		require.Equal(t, "Random Bank", acc.Name)
-		require.Equal(t, string(models.Bank), acc.Type)
-		require.Equal(t, "EUR", acc.Currency)
-		require.WithinDuration(t, now, acc.CreatedAt, 0)
+		require.Equal(t, id, uuid.MustParse((*acc)["id"].(string)))
+		require.Equal(t, "Random Bank", (*acc)["name"])
+		require.Equal(t, string(models.Bank), (*acc)["type"])
+		require.Equal(t, "EUR", (*acc)["currency"])
+		timeParsed, err := time.Parse(time.RFC3339, (*acc)["createdAt"].(string))
+		require.NoError(t, err)
+		require.WithinDuration(t, now, timeParsed, 0)
 	})
 
 	t.Run("get", func(t *testing.T) {

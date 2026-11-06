@@ -10,7 +10,7 @@ import (
 	"github.com/pedrodbflores/personal-finance-tracker/models"
 )
 
-type Tag struct {
+type tag struct {
 	Id   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
 }
@@ -69,7 +69,7 @@ func (r *TagRepository) Update(tag models.Tag) error {
 
 func (r *TagRepository) Get(id uuid.UUID) (*models.Tag, error) {
 	key := tagKey(id)
-	out, err := GetByKey[Tag](r.db, key)
+	out, err := GetByKey[tag](r.db, key)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (r *TagRepository) Get(id uuid.UUID) (*models.Tag, error) {
 }
 
 func (r *TagRepository) List() ([]models.Tag, error) {
-	tags, err := ListAllByKey[Tag](r.db, []byte(tagPrefix))
+	tags, err := ListAllByKey[tag](r.db, []byte(tagPrefix))
 	if err != nil {
 		return []models.Tag{}, err
 	}
@@ -104,14 +104,14 @@ func (r *TagRepository) Delete(tagId uuid.UUID) error {
 	})
 }
 
-func toRepoTag(tag models.Tag) Tag {
-	return Tag{
-		Id:   tag.Id,
-		Name: tag.Name,
+func toRepoTag(modelTag models.Tag) tag {
+	return tag{
+		Id:   modelTag.Id,
+		Name: modelTag.Name,
 	}
 }
 
-func toModelTag(tag Tag) models.Tag {
+func toModelTag(tag tag) models.Tag {
 	return models.Tag{
 		Id:   tag.Id,
 		Name: tag.Name,

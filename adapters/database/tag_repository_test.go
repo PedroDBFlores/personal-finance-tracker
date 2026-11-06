@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func findTagInDb(t *testing.T, db *badger.DB, id uuid.UUID) *database.Tag {
+func findTagInDb(t *testing.T, db *badger.DB, id uuid.UUID) *map[string]any {
 	t.Helper()
 	key := fmt.Appendf(nil, "tag:%s", id)
-	out, err := database.GetByKey[*database.Tag](db, key)
+	out, err := database.GetByKey[*map[string]any](db, key)
 	if err != nil {
 		t.Fatalf("failed to get tag by key: %v", err)
 	}
@@ -38,8 +38,10 @@ func TestTagRepository(t *testing.T) {
 		require.NoError(t, err)
 
 		found := findTagInDb(t, db, id)
-		require.Equal(t, id, found.Id)
-		require.Equal(t, tag.Name, found.Name)
+		require.NotNil(t, found)
+		require.IsType(t, &map[string]any{}, found)
+		require.Equal(t, id, uuid.MustParse((*found)["id"].(string)))
+		require.Equal(t, tag.Name, (*found)["name"])
 	})
 
 	t.Run("get", func(t *testing.T) {
@@ -87,7 +89,8 @@ func TestTagRepository(t *testing.T) {
 			err = repo.Update(tag)
 			require.NoError(t, err)
 
-			found := findTagInDb(t, db, id)
+			found, err := repo.Get(id)
+			require.NoError(t, err)
 			require.Equal(t, id, found.Id)
 			require.Equal(t, "Updated Tag", found.Name)
 		})

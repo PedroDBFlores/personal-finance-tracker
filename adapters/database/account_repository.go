@@ -11,7 +11,7 @@ import (
 	"github.com/pedrodbflores/personal-finance-tracker/models"
 )
 
-type Account struct {
+type account struct {
 	Id        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Type      string    `json:"type"`
@@ -73,7 +73,7 @@ func (r *AccountRepository) Update(account models.Account) error {
 
 func (r *AccountRepository) Get(id uuid.UUID) (*models.Account, error) {
 	key := accountKey(id)
-	out, err := GetByKey[Account](r.db, key)
+	out, err := GetByKey[account](r.db, key)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (r *AccountRepository) Get(id uuid.UUID) (*models.Account, error) {
 }
 
 func (r *AccountRepository) List() ([]models.Account, error) {
-	accounts, err := ListAllByKey[Account](r.db, []byte(accountPrefix))
+	accounts, err := ListAllByKey[account](r.db, []byte(accountPrefix))
 	if err != nil {
 		return []models.Account{}, err
 	}
@@ -108,7 +108,7 @@ func (r *AccountRepository) Delete(id uuid.UUID) error {
 	})
 }
 
-func toModelAccount(account Account) models.Account {
+func toModelAccount(account account) models.Account {
 	return models.Account{
 		Id:        account.Id,
 		Name:      account.Name,
@@ -118,12 +118,12 @@ func toModelAccount(account Account) models.Account {
 	}
 }
 
-func toRepoAccount(account models.Account) Account {
-	return Account{
-		Id:        account.Id,
-		Name:      account.Name,
-		Type:      string(account.Type),
-		Currency:  account.Currency,
-		CreatedAt: account.CreatedAt,
+func toRepoAccount(modelAccount models.Account) account {
+	return account{
+		Id:        modelAccount.Id,
+		Name:      modelAccount.Name,
+		Type:      string(modelAccount.Type),
+		Currency:  modelAccount.Currency,
+		CreatedAt: modelAccount.CreatedAt,
 	}
 }
