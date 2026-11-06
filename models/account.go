@@ -1,7 +1,6 @@
 package models
 
 import (
-	"math/big"
 	"time"
 
 	"uuid"
@@ -39,38 +38,4 @@ func NewAccount(id uuid.UUID, name string, accountType AccountType, currency str
 		Currency:  currency,
 		CreatedAt: createdAt,
 	}
-}
-
-// CalculateBalance calculates the current balance of the account from its linked movements.
-// Returns the balance as a big.Int (last two digits are cents).
-func (a Account) CalculateBalance(movements []Movement) big.Int {
-	balance := big.NewInt(0)
-	for _, movement := range movements {
-		if movement.AccountId == a.Id {
-			switch movement.Type {
-			case MovementTypeCredit:
-				balance.Add(balance, &movement.Value)
-			case Debit:
-				balance.Sub(balance, &movement.Value)
-			}
-		}
-	}
-	return *balance
-}
-
-// CalculateBalanceAt calculates the account balance at a specific point in time.
-// Useful for snapshots (e.g., end-of-year balance).
-func (a Account) CalculateBalanceAt(movements []Movement, snapshotTime time.Time) big.Int {
-	balance := big.NewInt(0)
-	for _, movement := range movements {
-		if (movement.AccountId == a.Id) && (movement.Date.Before(snapshotTime) || movement.Date.Equal(snapshotTime)) {
-			switch movement.Type {
-			case MovementTypeCredit:
-				balance.Add(balance, &movement.Value)
-			case Debit:
-				balance.Sub(balance, &movement.Value)
-			}
-		}
-	}
-	return *balance
 }
