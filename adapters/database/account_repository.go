@@ -19,10 +19,10 @@ type Account struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
-const prefix = "account"
+const accountPrefix = "account"
 
 func accountKey(id uuid.UUID) []byte {
-	return fmt.Appendf(nil, "%s:%s", prefix, id)
+	return fmt.Appendf(nil, "%s:%s", accountPrefix, id)
 }
 
 type AccountRepository struct {
@@ -33,15 +33,15 @@ func NewAccountRepository(db *badger.DB) AccountRepository {
 	return AccountRepository{db}
 }
 
-func (a *AccountRepository) Create(account models.Account) (uuid.UUID, error) {
+func (r *AccountRepository) Create(account models.Account) (uuid.UUID, error) {
 	id := uuid.NewV7()
 	key := accountKey(id)
 	account.Id = id
-	b, err := json.Marshal(account)
+	b, err := json.Marshal(toRepoAccount(account))
 	if err != nil {
 		return uuid.Nil(), err
 	}
-	if err := a.db.Update(func(txn *badger.Txn) error {
+	if err := r.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, b)
 	}); err != nil {
 		return uuid.Nil(), err
@@ -50,20 +50,20 @@ func (a *AccountRepository) Create(account models.Account) (uuid.UUID, error) {
 	return id, nil
 }
 
-func (a *AccountRepository) Update(account models.Account) error {
+func (r *AccountRepository) Update(account models.Account) error {
 	key := accountKey(account.Id)
-	ok, err := IsKeyPresent(a.db, key)
+	ok, err := IsKeyPresent(r.db, key)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", account.Id))
+		return app_errors.NewResourceNotFoundError("Account", string(key))
 	}
-	return a.db.Update(func(txn *badger.Txn) error {
+	return r.db.Update(func(txn *badger.Txn) error {
 		if _, err := txn.Get(key); err != nil {
 			return err
 		}
-		b, err := json.Marshal(account)
+		b, err := json.Marshal(toRepoAccount(account))
 		if err != nil {
 			return err
 		}
@@ -71,9 +71,9 @@ func (a *AccountRepository) Update(account models.Account) error {
 	})
 }
 
-func (a *AccountRepository) Get(id uuid.UUID) (*models.Account, error) {
+func (r *AccountRepository) Get(id uuid.UUID) (*models.Account, error) {
 	key := accountKey(id)
-	out, err := GetByKey[Account](a.db, key)
+	out, err := GetByKey[Account](r.db, key)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +81,8 @@ func (a *AccountRepository) Get(id uuid.UUID) (*models.Account, error) {
 	return &modelAccount, nil
 }
 
-func (a *AccountRepository) List() ([]models.Account, error) {
-	accounts, err := ListAllByKey[Account](a.db, []byte(prefix))
+func (r *AccountRepository) List() ([]models.Account, error) {
+	accounts, err := ListAllByKey[Account](r.db, []byte(accountPrefix))
 	if err != nil {
 		return []models.Account{}, err
 	}
@@ -94,9 +94,17 @@ func (a *AccountRepository) List() ([]models.Account, error) {
 	return modelAccounts, nil
 }
 
-func (a *AccountRepository) Delete(id uuid.UUID) error {
-	return a.db.Update(func(txn *badger.Txn) error {
-		return txn.Delete(accountKey(id))
+func (r *AccountRepository) Delete(id uuid.UUID) error {
+	key := accountKey(id)
+	ok, err := IsKeyPresent(r.db, key)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return app_errors.NewResourceNotFoundError("Account", string(key))
+	}
+	return r.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete(key)
 	})
 }
 
@@ -105,6 +113,16 @@ func toModelAccount(account Account) models.Account {
 		Id:        account.Id,
 		Name:      account.Name,
 		Type:      models.AccountType(account.Type),
+		Currency:  account.Currency,
+		CreatedAt: account.CreatedAt,
+	}
+}
+
+func toRepoAccount(account models.Account) Account {
+	return Account{
+		Id:        account.Id,
+		Name:      account.Name,
+		Type:      string(account.Type),
 		Currency:  account.Currency,
 		CreatedAt: account.CreatedAt,
 	}

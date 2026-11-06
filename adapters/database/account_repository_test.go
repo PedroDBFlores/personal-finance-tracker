@@ -1,7 +1,6 @@
 package database_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -11,33 +10,18 @@ import (
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/database"
-	"github.com/pedrodbflores/personal-finance-tracker/adapters/database/logger"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/models"
 	"github.com/stretchr/testify/require"
 )
 
-func getInMemoryDatabase(t *testing.T, _logger *slog.Logger) (*badger.DB, error) {
-	t.Helper()
-	opts := badger.DefaultOptions("").
-		WithInMemory(true).
-		WithLogger(logger.NewBadgerSlog(_logger))
-	return database.GetDatabase(&opts)
-}
-
 func findAccountInDb(t *testing.T, db *badger.DB, id uuid.UUID) *database.Account {
 	t.Helper()
-	var out *database.Account
 	key := fmt.Appendf(nil, "account:%s", id)
-	_ = db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
-		if err != nil {
-			return nil
-		}
-		return item.Value(func(val []byte) error {
-			return json.Unmarshal(val, &out)
-		})
-	})
+	out, err := database.GetByKey[*database.Account](db, key)
+	if err != nil {
+		t.Fatalf("failed to get account by key: %v", err)
+	}
 	return out
 }
 
@@ -68,7 +52,7 @@ func TestAccountRepository(t *testing.T) {
 		require.WithinDuration(t, now, acc.CreatedAt, 0)
 	})
 
-	t.Run("create", func(t *testing.T) {
+	t.Run("get", func(t *testing.T) {
 		t.Run("it gets an account by id", func(t *testing.T) {
 			db, err := getInMemoryDatabase(t, logger)
 			require.NoError(t, err)
@@ -186,25 +170,38 @@ func TestAccountRepository(t *testing.T) {
 		require.WithinDuration(t, now, accounts[1].CreatedAt, 0)
 	})
 
-	t.Run("deletes an account by id", func(t *testing.T) {
-		db, err := getInMemoryDatabase(t, logger)
-		require.NoError(t, err)
-		repo := database.NewAccountRepository(db)
-		now := time.Now()
-		account := models.Account{
-			Name:      "Random Bank",
-			Type:      models.Bank,
-			Currency:  "EUR",
-			CreatedAt: now,
-		}
-		id, err := repo.Create(account)
-		require.NoError(t, err)
+	t.Run("delete", func(t *testing.T) {
+		t.Run("deletes an account by id", func(t *testing.T) {
+			db, err := getInMemoryDatabase(t, logger)
+			require.NoError(t, err)
+			repo := database.NewAccountRepository(db)
+			now := time.Now()
+			account := models.Account{
+				Name:      "Random Bank",
+				Type:      models.Bank,
+				Currency:  "EUR",
+				CreatedAt: now,
+			}
+			id, err := repo.Create(account)
+			require.NoError(t, err)
 
-		err = repo.Delete(id)
-		require.NoError(t, err)
+			err = repo.Delete(id)
+			require.NoError(t, err)
 
-		acc, err := repo.Get(id)
-		require.Error(t, err)
-		require.Nil(t, acc)
+			acc, err := repo.Get(id)
+			require.Error(t, err)
+			require.Nil(t, acc)
+		})
+
+		t.Run("returns ResourceNotFoundError if the account doesn't exist", func(t *testing.T) {
+			db, err := getInMemoryDatabase(t, logger)
+			require.NoError(t, err)
+			repo := database.NewAccountRepository(db)
+
+			id := uuid.NewV7()
+			err = repo.Delete(id)
+
+			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", id)))
+		})
 	})
 }

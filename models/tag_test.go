@@ -3,11 +3,11 @@ package models
 import (
 	"testing"
 
-	"github.com/google/uuid"
+	"uuid"
 )
 
 func TestNewTag(t *testing.T) {
-	id := uuid.New()
+	id := uuid.NewV7()
 	name := "Test Tag"
 
 	tag := NewTag(id, name)
@@ -21,7 +21,7 @@ func TestNewTag(t *testing.T) {
 }
 
 func TestTagDefaults(t *testing.T) {
-	id := uuid.Nil
+	id := uuid.Nil()
 	name := ""
 
 	tag := Tag{

@@ -1,6 +1,6 @@
 package models
 
-import "github.com/google/uuid"
+import "uuid"
 
 // Tag represents a label for categorizing movements (e.g., "Groceries", "Utilities")
 type Tag struct {
