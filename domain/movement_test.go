@@ -1,15 +1,14 @@
-package models
+package domain
 
 import (
 	"testing"
 	"time"
-	"uuid"
 )
 
 func TestNewMovement(t *testing.T) {
-	id := uuid.New()
+	id := NewId()
 	description := "Test Movement"
-	value := int64(10000) // $100.00
+	value := Money(10000)
 	movementType := MovementTypeCredit
 	date := time.Now()
 
@@ -33,9 +32,9 @@ func TestNewMovement(t *testing.T) {
 }
 
 func TestMovementDefaults(t *testing.T) {
-	id := uuid.New()
+	id := NewId()
 	description := "Test Movement"
-	value := int64(0)
+	value := Money(0)
 	movementType := MovementTypeDebit
 	date := time.Time{}
 

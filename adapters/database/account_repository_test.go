@@ -8,22 +8,11 @@ import (
 	"time"
 	"uuid"
 
-	"github.com/dgraph-io/badger/v4"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/database"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/stretchr/testify/require"
 )
-
-func findAccountInDb(t *testing.T, db *badger.DB, id uuid.UUID) *map[string]any {
-	t.Helper()
-	key := fmt.Appendf(nil, "account:%s", id)
-	out, err := database.GetByKey[*map[string]any](db, key)
-	if err != nil {
-		t.Fatalf("failed to get account by key: %v", err)
-	}
-	return out
-}
 
 func TestAccountRepository(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -32,26 +21,25 @@ func TestAccountRepository(t *testing.T) {
 		require.NoError(t, err)
 		repo := database.NewAccountRepository(db)
 		now := time.Now()
-		account := models.Account{
+		account := domain.Account{
 			Name:      "Random Bank",
-			Type:      models.AccountTypeBank,
-			Currency:  "EUR",
+			Type:      domain.AccountTypeBank,
+			Currency:  domain.CurrencyEUR,
 			CreatedAt: now,
 		}
 
 		id, err := repo.Create(account)
 		require.NoError(t, err)
-		require.NotEqual(t, uuid.Nil(), id)
+		require.NotEqual(t, domain.Id(uuid.Nil()), id)
 
-		acc := findAccountInDb(t, db, id)
-		require.NotNil(t, acc)
-		require.Equal(t, id, uuid.MustParse((*acc)["id"].(string)))
-		require.Equal(t, "Random Bank", (*acc)["name"])
-		require.Equal(t, string(models.AccountTypeBank), (*acc)["type"])
-		require.Equal(t, "EUR", (*acc)["currency"])
-		timeParsed, err := time.Parse(time.RFC3339, (*acc)["createdAt"].(string))
+		acc, err := repo.Get(id)
 		require.NoError(t, err)
-		require.WithinDuration(t, now, timeParsed, 0)
+		require.NotNil(t, acc)
+		require.Equal(t, id, acc.Id)
+		require.Equal(t, "Random Bank", acc.Name)
+		require.Equal(t, domain.AccountTypeBank, acc.Type)
+		require.Equal(t, domain.CurrencyEUR, acc.Currency)
+		require.WithinDuration(t, now, acc.CreatedAt, 0)
 	})
 
 	t.Run("get", func(t *testing.T) {
@@ -60,23 +48,23 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 			now := time.Now()
-			account := models.Account{
+			account := domain.Account{
 				Name:      "Random Bank",
-				Type:      models.AccountTypeBank,
-				Currency:  "EUR",
+				Type:      domain.AccountTypeBank,
+				Currency:  domain.CurrencyEUR,
 				CreatedAt: now,
 			}
 			id, err := repo.Create(account)
 			require.NoError(t, err)
-			require.NotEqual(t, uuid.Nil(), id)
+			require.NotEqual(t, domain.Id(uuid.Nil()), id)
 
 			acc, err := repo.Get(id)
 
 			require.NoError(t, err)
 			require.Equal(t, id, acc.Id)
 			require.Equal(t, "Random Bank", acc.Name)
-			require.Equal(t, models.AccountTypeBank, acc.Type)
-			require.Equal(t, "EUR", acc.Currency)
+			require.Equal(t, domain.AccountTypeBank, acc.Type)
+			require.Equal(t, domain.CurrencyEUR, acc.Currency)
 			require.WithinDuration(t, now, acc.CreatedAt, 0)
 		})
 
@@ -85,7 +73,7 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 
-			id := uuid.NewV7()
+			id := domain.Id(uuid.NewV7())
 			acc, err := repo.Get(id)
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", id)))
 			require.Nil(t, acc)
@@ -98,16 +86,16 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 			now := time.Now()
-			account := models.Account{
+			account := domain.Account{
 				Name:      "Random Bank",
-				Type:      models.AccountTypeBank,
-				Currency:  "EUR",
+				Type:      domain.AccountTypeBank,
+				Currency:  domain.CurrencyEUR,
 				CreatedAt: now,
 			}
 
 			id, err := repo.Create(account)
 			require.NoError(t, err)
-			require.NotEqual(t, uuid.Nil(), id)
+			require.NotEqual(t, domain.Id(uuid.Nil()), id)
 
 			acc, err := repo.Get(id)
 			require.NoError(t, err)
@@ -125,11 +113,11 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 
-			account := models.Account{
-				Id:        uuid.NewV7(),
+			account := domain.Account{
+				Id:        domain.Id(uuid.NewV7()),
 				Name:      "Non-existent Bank",
-				Type:      models.AccountTypeBank,
-				Currency:  "EUR",
+				Type:      domain.AccountTypeBank,
+				Currency:  domain.CurrencyEUR,
 				CreatedAt: time.Now(),
 			}
 			err = repo.Update(account)
@@ -142,16 +130,16 @@ func TestAccountRepository(t *testing.T) {
 		require.NoError(t, err)
 		repo := database.NewAccountRepository(db)
 		now := time.Now()
-		accountOne := models.Account{
+		accountOne := domain.Account{
 			Name:      "Random Bank",
-			Type:      models.AccountTypeBank,
-			Currency:  "EUR",
+			Type:      domain.AccountTypeBank,
+			Currency:  domain.CurrencyEUR,
 			CreatedAt: now,
 		}
-		accountTwo := models.Account{
+		accountTwo := domain.Account{
 			Name:      "A fine brokerage",
-			Type:      models.AccountTypeBrokerage,
-			Currency:  "USD",
+			Type:      domain.AccountTypeBrokerage,
+			Currency:  domain.CurrencyUSD,
 			CreatedAt: now,
 		}
 
@@ -163,12 +151,12 @@ func TestAccountRepository(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, accounts, 2)
 		require.Equal(t, "Random Bank", accounts[0].Name)
-		require.Equal(t, models.AccountTypeBank, accounts[0].Type)
-		require.Equal(t, "EUR", accounts[0].Currency)
+		require.Equal(t, domain.AccountTypeBank, accounts[0].Type)
+		require.Equal(t, domain.CurrencyEUR, accounts[0].Currency)
 		require.WithinDuration(t, now, accounts[0].CreatedAt, 0)
 		require.Equal(t, "A fine brokerage", accounts[1].Name)
-		require.Equal(t, models.AccountTypeBrokerage, accounts[1].Type)
-		require.Equal(t, "USD", accounts[1].Currency)
+		require.Equal(t, domain.AccountTypeBrokerage, accounts[1].Type)
+		require.Equal(t, domain.CurrencyUSD, accounts[1].Currency)
 		require.WithinDuration(t, now, accounts[1].CreatedAt, 0)
 	})
 
@@ -178,10 +166,10 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 			now := time.Now()
-			account := models.Account{
+			account := domain.Account{
 				Name:      "Random Bank",
-				Type:      models.AccountTypeBank,
-				Currency:  "EUR",
+				Type:      domain.AccountTypeBank,
+				Currency:  domain.CurrencyEUR,
 				CreatedAt: now,
 			}
 			id, err := repo.Create(account)
@@ -200,7 +188,7 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 
-			id := uuid.NewV7()
+			id := domain.Id(uuid.NewV7())
 			err = repo.Delete(id)
 
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", id)))

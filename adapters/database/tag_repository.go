@@ -5,19 +5,20 @@ import (
 	"fmt"
 	"uuid"
 
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
+
 	"github.com/dgraph-io/badger/v4"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
-	"github.com/pedrodbflores/personal-finance-tracker/models"
 )
 
 type tag struct {
-	Id   uuid.UUID `json:"id"`
+	Id   domain.Id `json:"id"`
 	Name string    `json:"name"`
 }
 
 const tagPrefix = "tag"
 
-func tagKey(tagId uuid.UUID) []byte {
+func tagKey(tagId domain.Id) []byte {
 	return fmt.Appendf(nil, "%s:%s", tagPrefix, tagId)
 }
 
@@ -29,24 +30,24 @@ func NewTagRepository(db *badger.DB) TagRepository {
 	return TagRepository{db}
 }
 
-func (r *TagRepository) Create(tag models.Tag) (uuid.UUID, error) {
-	id := uuid.NewV7()
+func (r *TagRepository) Create(tag domain.Tag) (domain.Id, error) {
+	id := domain.NewId()
 	key := tagKey(id)
 	tag.Id = id
 	b, err := json.Marshal(toRepoTag(tag))
 	if err != nil {
-		return uuid.Nil(), err
+		return domain.Id(uuid.Nil()), err
 	}
 	if err := r.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, b)
 	}); err != nil {
-		return uuid.Nil(), err
+		return domain.Id(uuid.Nil()), err
 	}
 
 	return id, nil
 }
 
-func (r *TagRepository) Update(tag models.Tag) error {
+func (r *TagRepository) Update(tag domain.Tag) error {
 	key := tagKey(tag.Id)
 	ok, err := IsKeyPresent(r.db, key)
 	if err != nil {
@@ -67,7 +68,7 @@ func (r *TagRepository) Update(tag models.Tag) error {
 	})
 }
 
-func (r *TagRepository) Get(id uuid.UUID) (*models.Tag, error) {
+func (r *TagRepository) Get(id domain.Id) (*domain.Tag, error) {
 	key := tagKey(id)
 	out, err := GetByKey[tag](r.db, key)
 	if err != nil {
@@ -77,12 +78,12 @@ func (r *TagRepository) Get(id uuid.UUID) (*models.Tag, error) {
 	return &modelTag, nil
 }
 
-func (r *TagRepository) List() ([]models.Tag, error) {
+func (r *TagRepository) List() ([]domain.Tag, error) {
 	tags, err := ListAllByKey[tag](r.db, []byte(tagPrefix))
 	if err != nil {
-		return []models.Tag{}, err
+		return []domain.Tag{}, err
 	}
-	var modelTags []models.Tag
+	var modelTags []domain.Tag
 	for _, tag := range tags {
 		modelTags = append(modelTags, toModelTag(tag))
 	}
@@ -90,7 +91,7 @@ func (r *TagRepository) List() ([]models.Tag, error) {
 	return modelTags, nil
 }
 
-func (r *TagRepository) Delete(tagId uuid.UUID) error {
+func (r *TagRepository) Delete(tagId domain.Id) error {
 	key := tagKey(tagId)
 	ok, err := IsKeyPresent(r.db, key)
 	if err != nil {
@@ -104,15 +105,15 @@ func (r *TagRepository) Delete(tagId uuid.UUID) error {
 	})
 }
 
-func toRepoTag(modelTag models.Tag) tag {
+func toRepoTag(modelTag domain.Tag) tag {
 	return tag{
 		Id:   modelTag.Id,
 		Name: modelTag.Name,
 	}
 }
 
-func toModelTag(tag tag) models.Tag {
-	return models.Tag{
+func toModelTag(tag tag) domain.Tag {
+	return domain.Tag{
 		Id:   tag.Id,
 		Name: tag.Name,
 	}

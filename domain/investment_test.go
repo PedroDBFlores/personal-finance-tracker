@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"math/big"
@@ -71,7 +71,7 @@ func TestUpdateCurrentValueForETF(t *testing.T) {
 	// Buy 10 shares at $100 each (value = $1000.00)
 	// Quantity is 10 shares (10 * 10000 (price) = 100000 cents = $1000.00)
 	buyQuantity := big.NewInt(10) // 10 shares
-	buyPrice := big.NewInt(10000)  // $100.00 (10000 cents)
+	buyPrice := big.NewInt(10000) // $100.00 (10000 cents)
 	buyTransaction := NewInvestmentTransaction(
 		uuid.New(),
 		investmentId,

@@ -3,22 +3,21 @@ package portsfakes
 
 import (
 	"sync"
-	"uuid"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeMovementLister struct {
-	ListStub        func(uuid.UUID) ([]models.Movement, error)
+	ListStub        func(domain.Id) ([]domain.Movement, error)
 	listMutex       sync.RWMutex
 	listArgsForCall []FakeMovementListerListArgs
 	listReturns     struct {
-		result1 []models.Movement
+		result1 []domain.Movement
 		result2 error
 	}
 	listReturnsOnCall map[int]struct {
-		result1 []models.Movement
+		result1 []domain.Movement
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -28,10 +27,10 @@ type FakeMovementLister struct {
 
 // FakeMovementListerListArgs holds the arguments of one call to List.
 type FakeMovementListerListArgs struct {
-	Arg1 uuid.UUID
+	Arg1 domain.Id
 }
 
-func (fake *FakeMovementLister) List(arg1 uuid.UUID) ([]models.Movement, error) {
+func (fake *FakeMovementLister) List(arg1 domain.Id) ([]domain.Movement, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
 	fake.listArgsForCall = append(fake.listArgsForCall, FakeMovementListerListArgs{arg1})
@@ -54,13 +53,13 @@ func (fake *FakeMovementLister) ListCallCount() int {
 	return len(fake.listArgsForCall)
 }
 
-func (fake *FakeMovementLister) ListCalls(stub func(uuid.UUID) ([]models.Movement, error)) {
+func (fake *FakeMovementLister) ListCalls(stub func(domain.Id) ([]domain.Movement, error)) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = stub
 }
 
-func (fake *FakeMovementLister) ListArgsForCall(i int) uuid.UUID {
+func (fake *FakeMovementLister) ListArgsForCall(i int) domain.Id {
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
 	argsForCall := fake.listArgsForCall[i]
@@ -75,28 +74,28 @@ func (fake *FakeMovementLister) ListArgs() []FakeMovementListerListArgs {
 	return args
 }
 
-func (fake *FakeMovementLister) ListReturns(result1 []models.Movement, result2 error) {
+func (fake *FakeMovementLister) ListReturns(result1 []domain.Movement, result2 error) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = nil
 	fake.listReturns = struct {
-		result1 []models.Movement
+		result1 []domain.Movement
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeMovementLister) ListReturnsOnCall(i int, result1 []models.Movement, result2 error) {
+func (fake *FakeMovementLister) ListReturnsOnCall(i int, result1 []domain.Movement, result2 error) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = nil
 	if fake.listReturnsOnCall == nil {
 		fake.listReturnsOnCall = make(map[int]struct {
-			result1 []models.Movement
+			result1 []domain.Movement
 			result2 error
 		})
 	}
 	fake.listReturnsOnCall[i] = struct {
-		result1 []models.Movement
+		result1 []domain.Movement
 		result2 error
 	}{result1, result2}
 }

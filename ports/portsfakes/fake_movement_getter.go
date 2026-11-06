@@ -3,22 +3,21 @@ package portsfakes
 
 import (
 	"sync"
-	"uuid"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeMovementGetter struct {
-	GetStub        func(uuid.UUID, uuid.UUID) (*models.Movement, error)
+	GetStub        func(domain.Id, domain.Id) (*domain.Movement, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []FakeMovementGetterGetArgs
 	getReturns     struct {
-		result1 *models.Movement
+		result1 *domain.Movement
 		result2 error
 	}
 	getReturnsOnCall map[int]struct {
-		result1 *models.Movement
+		result1 *domain.Movement
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -28,11 +27,11 @@ type FakeMovementGetter struct {
 
 // FakeMovementGetterGetArgs holds the arguments of one call to Get.
 type FakeMovementGetterGetArgs struct {
-	Arg1 uuid.UUID
-	Arg2 uuid.UUID
+	Arg1 domain.Id
+	Arg2 domain.Id
 }
 
-func (fake *FakeMovementGetter) Get(arg1 uuid.UUID, arg2 uuid.UUID) (*models.Movement, error) {
+func (fake *FakeMovementGetter) Get(arg1 domain.Id, arg2 domain.Id) (*domain.Movement, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, FakeMovementGetterGetArgs{arg1, arg2})
@@ -55,13 +54,13 @@ func (fake *FakeMovementGetter) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeMovementGetter) GetCalls(stub func(uuid.UUID, uuid.UUID) (*models.Movement, error)) {
+func (fake *FakeMovementGetter) GetCalls(stub func(domain.Id, domain.Id) (*domain.Movement, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeMovementGetter) GetArgsForCall(i int) (uuid.UUID, uuid.UUID) {
+func (fake *FakeMovementGetter) GetArgsForCall(i int) (domain.Id, domain.Id) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
@@ -76,28 +75,28 @@ func (fake *FakeMovementGetter) GetArgs() []FakeMovementGetterGetArgs {
 	return args
 }
 
-func (fake *FakeMovementGetter) GetReturns(result1 *models.Movement, result2 error) {
+func (fake *FakeMovementGetter) GetReturns(result1 *domain.Movement, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	fake.getReturns = struct {
-		result1 *models.Movement
+		result1 *domain.Movement
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeMovementGetter) GetReturnsOnCall(i int, result1 *models.Movement, result2 error) {
+func (fake *FakeMovementGetter) GetReturnsOnCall(i int, result1 *domain.Movement, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
-			result1 *models.Movement
+			result1 *domain.Movement
 			result2 error
 		})
 	}
 	fake.getReturnsOnCall[i] = struct {
-		result1 *models.Movement
+		result1 *domain.Movement
 		result2 error
 	}{result1, result2}
 }

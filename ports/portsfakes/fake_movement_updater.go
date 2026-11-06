@@ -3,14 +3,13 @@ package portsfakes
 
 import (
 	"sync"
-	"uuid"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeMovementUpdater struct {
-	UpdateStub        func(uuid.UUID, models.Movement) error
+	UpdateStub        func(domain.Id, domain.Movement) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []FakeMovementUpdaterUpdateArgs
 	updateReturns     struct {
@@ -26,11 +25,11 @@ type FakeMovementUpdater struct {
 
 // FakeMovementUpdaterUpdateArgs holds the arguments of one call to Update.
 type FakeMovementUpdaterUpdateArgs struct {
-	Arg1 uuid.UUID
-	Arg2 models.Movement
+	Arg1 domain.Id
+	Arg2 domain.Movement
 }
 
-func (fake *FakeMovementUpdater) Update(arg1 uuid.UUID, arg2 models.Movement) error {
+func (fake *FakeMovementUpdater) Update(arg1 domain.Id, arg2 domain.Movement) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeMovementUpdaterUpdateArgs{arg1, arg2})
@@ -53,13 +52,13 @@ func (fake *FakeMovementUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeMovementUpdater) UpdateCalls(stub func(uuid.UUID, models.Movement) error) {
+func (fake *FakeMovementUpdater) UpdateCalls(stub func(domain.Id, domain.Movement) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeMovementUpdater) UpdateArgsForCall(i int) (uuid.UUID, models.Movement) {
+func (fake *FakeMovementUpdater) UpdateArgsForCall(i int) (domain.Id, domain.Movement) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]

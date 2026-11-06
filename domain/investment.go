@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"math/big"
@@ -56,7 +56,7 @@ func NewInvestment(
 // For Savings/TermDeposit: sum of Deposit transactions minus Withdrawal transactions.
 func (i *Investment) UpdateCurrentValue(transactions []InvestmentTransaction) {
 	value := big.NewInt(0)
-	
+
 	for _, tx := range transactions {
 		if tx.InvestmentId != i.Id {
 			continue

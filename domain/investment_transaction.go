@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"math/big"
@@ -43,13 +43,13 @@ func NewInvestmentTransaction(
 	description string,
 ) InvestmentTransaction {
 	return InvestmentTransaction{
-		Id:            id,
-		InvestmentId:  investmentId,
-		Type:          txType,
-		Amount:        amount,
-		Quantity:      quantity,
-		Price:         price,
-		Date:          date,
-		Description:   description,
+		Id:           id,
+		InvestmentId: investmentId,
+		Type:         txType,
+		Amount:       amount,
+		Quantity:     quantity,
+		Price:        price,
+		Date:         date,
+		Description:  description,
 	}
 }

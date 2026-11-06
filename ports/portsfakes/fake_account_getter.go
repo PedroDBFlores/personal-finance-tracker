@@ -3,22 +3,21 @@ package portsfakes
 
 import (
 	"sync"
-	"uuid"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeAccountGetter struct {
-	GetStub        func(uuid.UUID) (*models.Account, error)
+	GetStub        func(domain.Id) (*domain.Account, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []FakeAccountGetterGetArgs
 	getReturns     struct {
-		result1 *models.Account
+		result1 *domain.Account
 		result2 error
 	}
 	getReturnsOnCall map[int]struct {
-		result1 *models.Account
+		result1 *domain.Account
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -28,10 +27,10 @@ type FakeAccountGetter struct {
 
 // FakeAccountGetterGetArgs holds the arguments of one call to Get.
 type FakeAccountGetterGetArgs struct {
-	Arg1 uuid.UUID
+	Arg1 domain.Id
 }
 
-func (fake *FakeAccountGetter) Get(arg1 uuid.UUID) (*models.Account, error) {
+func (fake *FakeAccountGetter) Get(arg1 domain.Id) (*domain.Account, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, FakeAccountGetterGetArgs{arg1})
@@ -54,13 +53,13 @@ func (fake *FakeAccountGetter) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeAccountGetter) GetCalls(stub func(uuid.UUID) (*models.Account, error)) {
+func (fake *FakeAccountGetter) GetCalls(stub func(domain.Id) (*domain.Account, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeAccountGetter) GetArgsForCall(i int) uuid.UUID {
+func (fake *FakeAccountGetter) GetArgsForCall(i int) domain.Id {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
@@ -75,28 +74,28 @@ func (fake *FakeAccountGetter) GetArgs() []FakeAccountGetterGetArgs {
 	return args
 }
 
-func (fake *FakeAccountGetter) GetReturns(result1 *models.Account, result2 error) {
+func (fake *FakeAccountGetter) GetReturns(result1 *domain.Account, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	fake.getReturns = struct {
-		result1 *models.Account
+		result1 *domain.Account
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeAccountGetter) GetReturnsOnCall(i int, result1 *models.Account, result2 error) {
+func (fake *FakeAccountGetter) GetReturnsOnCall(i int, result1 *domain.Account, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
-			result1 *models.Account
+			result1 *domain.Account
 			result2 error
 		})
 	}
 	fake.getReturnsOnCall[i] = struct {
-		result1 *models.Account
+		result1 *domain.Account
 		result2 error
 	}{result1, result2}
 }

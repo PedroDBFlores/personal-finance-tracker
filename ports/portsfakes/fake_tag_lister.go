@@ -4,20 +4,20 @@ package portsfakes
 import (
 	"sync"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeTagLister struct {
-	ListStub        func() ([]models.Tag, error)
+	ListStub        func() ([]domain.Tag, error)
 	listMutex       sync.RWMutex
 	listArgsForCall []struct{}
 	listReturns     struct {
-		result1 []models.Tag
+		result1 []domain.Tag
 		result2 error
 	}
 	listReturnsOnCall map[int]struct {
-		result1 []models.Tag
+		result1 []domain.Tag
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -25,7 +25,7 @@ type FakeTagLister struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTagLister) List() ([]models.Tag, error) {
+func (fake *FakeTagLister) List() ([]domain.Tag, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
 	fake.listArgsForCall = append(fake.listArgsForCall, struct{}{})
@@ -48,34 +48,34 @@ func (fake *FakeTagLister) ListCallCount() int {
 	return len(fake.listArgsForCall)
 }
 
-func (fake *FakeTagLister) ListCalls(stub func() ([]models.Tag, error)) {
+func (fake *FakeTagLister) ListCalls(stub func() ([]domain.Tag, error)) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = stub
 }
 
-func (fake *FakeTagLister) ListReturns(result1 []models.Tag, result2 error) {
+func (fake *FakeTagLister) ListReturns(result1 []domain.Tag, result2 error) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = nil
 	fake.listReturns = struct {
-		result1 []models.Tag
+		result1 []domain.Tag
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeTagLister) ListReturnsOnCall(i int, result1 []models.Tag, result2 error) {
+func (fake *FakeTagLister) ListReturnsOnCall(i int, result1 []domain.Tag, result2 error) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = nil
 	if fake.listReturnsOnCall == nil {
 		fake.listReturnsOnCall = make(map[int]struct {
-			result1 []models.Tag
+			result1 []domain.Tag
 			result2 error
 		})
 	}
 	fake.listReturnsOnCall[i] = struct {
-		result1 []models.Tag
+		result1 []domain.Tag
 		result2 error
 	}{result1, result2}
 }

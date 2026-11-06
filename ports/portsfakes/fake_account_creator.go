@@ -3,22 +3,21 @@ package portsfakes
 
 import (
 	"sync"
-	"uuid"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeAccountCreator struct {
-	CreateStub        func(models.Account) (uuid.UUID, error)
+	CreateStub        func(domain.Account) (domain.Id, error)
 	createMutex       sync.RWMutex
 	createArgsForCall []FakeAccountCreatorCreateArgs
 	createReturns     struct {
-		result1 uuid.UUID
+		result1 domain.Id
 		result2 error
 	}
 	createReturnsOnCall map[int]struct {
-		result1 uuid.UUID
+		result1 domain.Id
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -28,10 +27,10 @@ type FakeAccountCreator struct {
 
 // FakeAccountCreatorCreateArgs holds the arguments of one call to Create.
 type FakeAccountCreatorCreateArgs struct {
-	Arg1 models.Account
+	Arg1 domain.Account
 }
 
-func (fake *FakeAccountCreator) Create(arg1 models.Account) (uuid.UUID, error) {
+func (fake *FakeAccountCreator) Create(arg1 domain.Account) (domain.Id, error) {
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
 	fake.createArgsForCall = append(fake.createArgsForCall, FakeAccountCreatorCreateArgs{arg1})
@@ -54,13 +53,13 @@ func (fake *FakeAccountCreator) CreateCallCount() int {
 	return len(fake.createArgsForCall)
 }
 
-func (fake *FakeAccountCreator) CreateCalls(stub func(models.Account) (uuid.UUID, error)) {
+func (fake *FakeAccountCreator) CreateCalls(stub func(domain.Account) (domain.Id, error)) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = stub
 }
 
-func (fake *FakeAccountCreator) CreateArgsForCall(i int) models.Account {
+func (fake *FakeAccountCreator) CreateArgsForCall(i int) domain.Account {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
 	argsForCall := fake.createArgsForCall[i]
@@ -75,28 +74,28 @@ func (fake *FakeAccountCreator) CreateArgs() []FakeAccountCreatorCreateArgs {
 	return args
 }
 
-func (fake *FakeAccountCreator) CreateReturns(result1 uuid.UUID, result2 error) {
+func (fake *FakeAccountCreator) CreateReturns(result1 domain.Id, result2 error) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = nil
 	fake.createReturns = struct {
-		result1 uuid.UUID
+		result1 domain.Id
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeAccountCreator) CreateReturnsOnCall(i int, result1 uuid.UUID, result2 error) {
+func (fake *FakeAccountCreator) CreateReturnsOnCall(i int, result1 domain.Id, result2 error) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = nil
 	if fake.createReturnsOnCall == nil {
 		fake.createReturnsOnCall = make(map[int]struct {
-			result1 uuid.UUID
+			result1 domain.Id
 			result2 error
 		})
 	}
 	fake.createReturnsOnCall[i] = struct {
-		result1 uuid.UUID
+		result1 domain.Id
 		result2 error
 	}{result1, result2}
 }

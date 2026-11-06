@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"testing"
@@ -7,10 +7,10 @@ import (
 )
 
 func TestNewAccount(t *testing.T) {
-	id := uuid.New()
+	id := Id(uuid.New())
 	name := "Test Account"
 	accountType := AccountTypeBank
-	currency := "USD"
+	currency := ParseCurrency("USD")
 	createdAt := time.Now()
 
 	account := NewAccount(id, name, accountType, currency, createdAt)

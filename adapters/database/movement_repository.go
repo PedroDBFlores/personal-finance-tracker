@@ -1,27 +1,28 @@
 package database
 
 import (
+	"encoding/json"
 	"fmt"
-	"math/big"
 	"time"
 	"uuid"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 )
 
 type movement struct {
-	Id           uuid.UUID `json:"id"`
-	Description  string    `json:"description"`
-	Value        big.Int   `json:"value"`
-	MovementType string    `json:"type"`
-	Date         time.Time `json:"date"`
+	Id           domain.Id           `json:"id"`
+	Description  string              `json:"description"`
+	Value        domain.Money        `json:"value"`
+	MovementType domain.MovementType `json:"type"`
+	Date         time.Time           `json:"date"`
 }
 
 const movementKeyPrefix = "account:%s:movement"
 
-func movementKey(accountId, movementId string) string {
-	return fmt.Sprintf(movementKeyPrefix+":%s", accountId, movementId)
+func movementKey(accountId, movementId domain.Id) []byte {
+	return fmt.Appendf(nil, movementKeyPrefix+":%s", accountId, movementId)
 }
 
 type MovementRepository struct {
@@ -32,22 +33,78 @@ func NewMovementRepository(db *badger.DB) MovementRepository {
 	return MovementRepository{db: db}
 }
 
-func (r *MovementRepository) Create(accountId uuid.UUID, movement models.Movement) (uuid.UUID, error) {
-	return uuid.Nil(), nil
+func (r *MovementRepository) Create(accountId domain.Id, movement domain.Movement) (domain.Id, error) {
+	id := domain.NewId()
+	key := movementKey(accountId, id)
+	movement.Id = id
+	b, err := json.Marshal(domainToMovement(movement))
+	if err != nil {
+		return domain.Id(uuid.Nil()), err
+	}
+	if err := r.db.Update(func(txn *badger.Txn) error {
+		return txn.Set(key, b)
+	}); err != nil {
+		return domain.Id(uuid.Nil()), err
+	}
+
+	return id, nil
 }
 
-func (r *MovementRepository) Update(accountId uuid.UUID, movement models.Movement) error {
-	return nil
+func (r *MovementRepository) Update(accountId domain.Id, movement domain.Movement) error {
+	key := movementKey(accountId, movement.Id)
+	ok, err := IsKeyPresent(r.db, key)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return app_errors.NewResourceNotFoundError("Movement", string(key))
+	}
+	return r.db.Update(func(txn *badger.Txn) error {
+		if _, err := txn.Get(key); err != nil {
+			return err
+		}
+		b, err := json.Marshal(domainToMovement(movement))
+		if err != nil {
+			return err
+		}
+		return txn.Set(key, b)
+	})
 }
 
-func (r *MovementRepository) Get(accountId, id uuid.UUID) (*models.Movement, error) {
+func (r *MovementRepository) Get(accountId, id domain.Id) (*domain.Movement, error) {
+	key := movementKey(accountId, id)
+	out, err := GetByKey[movement](r.db, key)
+	if err != nil {
+		return nil, err
+	}
+	modelMovement := movementToDomain(out)
+	return &modelMovement, nil
+}
+
+func (r *MovementRepository) List(accountId domain.Id) ([]domain.Movement, error) {
 	return nil, nil
 }
 
-func (r *MovementRepository) List(accountId uuid.UUID) ([]models.Movement, error) {
-	return nil, nil
+func (r *MovementRepository) Delete(accountId, id domain.Id) error {
+	return nil
 }
 
-func (r *MovementRepository) Delete(accountId, id uuid.UUID) error {
-	return nil
+func movementToDomain(m movement) domain.Movement {
+	return domain.NewMovement(
+		m.Id,
+		m.Description,
+		m.Value,
+		m.MovementType,
+		m.Date,
+	)
+}
+
+func domainToMovement(m domain.Movement) movement {
+	return movement{
+		Id:           m.Id,
+		Description:  m.Description,
+		Value:        m.Value,
+		MovementType: m.Type,
+		Date:         m.Date,
+	}
 }

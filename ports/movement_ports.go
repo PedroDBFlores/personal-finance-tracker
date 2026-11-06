@@ -1,32 +1,30 @@
 package ports
 
 import (
-	"uuid"
-
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 )
 
 //counterfeiter:generate . MovementCreator
 type MovementCreator interface {
-	Create(accountId uuid.UUID, movement models.Movement) (uuid.UUID, error)
+	Create(accountId domain.Id, movement domain.Movement) (domain.Id, error)
 }
 
 //counterfeiter:generate . MovementUpdater
 type MovementUpdater interface {
-	Update(accountId uuid.UUID, movement models.Movement) error
+	Update(accountId domain.Id, movement domain.Movement) error
 }
 
 //counterfeiter:generate . MovementGetter
 type MovementGetter interface {
-	Get(accountId, id uuid.UUID) (*models.Movement, error)
+	Get(accountId, id domain.Id) (*domain.Movement, error)
 }
 
 //counterfeiter:generate . MovementLister
 type MovementLister interface {
-	List(accountId uuid.UUID) ([]models.Movement, error)
+	List(accountId domain.Id) ([]domain.Movement, error)
 }
 
 //counterfeiter:generate . MovementDeleter
 type MovementDeleter interface {
-	Delete(accountId, id uuid.UUID) error
+	Delete(accountId, id domain.Id) error
 }

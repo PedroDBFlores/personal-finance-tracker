@@ -3,22 +3,21 @@ package portsfakes
 
 import (
 	"sync"
-	"uuid"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeTagGetter struct {
-	GetStub        func(uuid.UUID) (*models.Tag, error)
+	GetStub        func(domain.Id) (*domain.Tag, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []FakeTagGetterGetArgs
 	getReturns     struct {
-		result1 *models.Tag
+		result1 *domain.Tag
 		result2 error
 	}
 	getReturnsOnCall map[int]struct {
-		result1 *models.Tag
+		result1 *domain.Tag
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -28,10 +27,10 @@ type FakeTagGetter struct {
 
 // FakeTagGetterGetArgs holds the arguments of one call to Get.
 type FakeTagGetterGetArgs struct {
-	Arg1 uuid.UUID
+	Arg1 domain.Id
 }
 
-func (fake *FakeTagGetter) Get(arg1 uuid.UUID) (*models.Tag, error) {
+func (fake *FakeTagGetter) Get(arg1 domain.Id) (*domain.Tag, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, FakeTagGetterGetArgs{arg1})
@@ -54,13 +53,13 @@ func (fake *FakeTagGetter) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeTagGetter) GetCalls(stub func(uuid.UUID) (*models.Tag, error)) {
+func (fake *FakeTagGetter) GetCalls(stub func(domain.Id) (*domain.Tag, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeTagGetter) GetArgsForCall(i int) uuid.UUID {
+func (fake *FakeTagGetter) GetArgsForCall(i int) domain.Id {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
@@ -75,28 +74,28 @@ func (fake *FakeTagGetter) GetArgs() []FakeTagGetterGetArgs {
 	return args
 }
 
-func (fake *FakeTagGetter) GetReturns(result1 *models.Tag, result2 error) {
+func (fake *FakeTagGetter) GetReturns(result1 *domain.Tag, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	fake.getReturns = struct {
-		result1 *models.Tag
+		result1 *domain.Tag
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeTagGetter) GetReturnsOnCall(i int, result1 *models.Tag, result2 error) {
+func (fake *FakeTagGetter) GetReturnsOnCall(i int, result1 *domain.Tag, result2 error) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = nil
 	if fake.getReturnsOnCall == nil {
 		fake.getReturnsOnCall = make(map[int]struct {
-			result1 *models.Tag
+			result1 *domain.Tag
 			result2 error
 		})
 	}
 	fake.getReturnsOnCall[i] = struct {
-		result1 *models.Tag
+		result1 *domain.Tag
 		result2 error
 	}{result1, result2}
 }

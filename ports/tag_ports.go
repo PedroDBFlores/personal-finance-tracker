@@ -1,32 +1,28 @@
 package ports
 
-import (
-	"uuid"
-
-	"github.com/pedrodbflores/personal-finance-tracker/models"
-)
+import "github.com/pedrodbflores/personal-finance-tracker/domain"
 
 //counterfeiter:generate . TagCreator
 type TagCreator interface {
-	Create(tag models.Tag) (uuid.UUID, error)
+	Create(tag domain.Tag) (domain.Id, error)
 }
 
 //counterfeiter:generate . TagUpdater
 type TagUpdater interface {
-	Update(tag models.Tag) error
+	Update(tag domain.Tag) error
 }
 
 //counterfeiter:generate . TagGetter
 type TagGetter interface {
-	Get(id uuid.UUID) (*models.Tag, error)
+	Get(id domain.Id) (*domain.Tag, error)
 }
 
 //counterfeiter:generate . TagLister
 type TagLister interface {
-	List() ([]models.Tag, error)
+	List() ([]domain.Tag, error)
 }
 
 //counterfeiter:generate . TagDeleter
 type TagDeleter interface {
-	Delete(id uuid.UUID) error
+	Delete(id domain.Id) error
 }

@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewTag(t *testing.T) {
-	id := uuid.NewV7()
+	id := NewId()
 	name := "Test Tag"
 
 	tag := NewTag(id, name)
@@ -21,7 +21,7 @@ func TestNewTag(t *testing.T) {
 }
 
 func TestTagDefaults(t *testing.T) {
-	id := uuid.Nil()
+	id := Id(uuid.Nil())
 	name := ""
 
 	tag := Tag{

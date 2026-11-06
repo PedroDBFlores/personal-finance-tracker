@@ -3,22 +3,21 @@ package portsfakes
 
 import (
 	"sync"
-	"uuid"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeTagCreator struct {
-	CreateStub        func(models.Tag) (uuid.UUID, error)
+	CreateStub        func(domain.Tag) (domain.Id, error)
 	createMutex       sync.RWMutex
 	createArgsForCall []FakeTagCreatorCreateArgs
 	createReturns     struct {
-		result1 uuid.UUID
+		result1 domain.Id
 		result2 error
 	}
 	createReturnsOnCall map[int]struct {
-		result1 uuid.UUID
+		result1 domain.Id
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -28,10 +27,10 @@ type FakeTagCreator struct {
 
 // FakeTagCreatorCreateArgs holds the arguments of one call to Create.
 type FakeTagCreatorCreateArgs struct {
-	Arg1 models.Tag
+	Arg1 domain.Tag
 }
 
-func (fake *FakeTagCreator) Create(arg1 models.Tag) (uuid.UUID, error) {
+func (fake *FakeTagCreator) Create(arg1 domain.Tag) (domain.Id, error) {
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
 	fake.createArgsForCall = append(fake.createArgsForCall, FakeTagCreatorCreateArgs{arg1})
@@ -54,13 +53,13 @@ func (fake *FakeTagCreator) CreateCallCount() int {
 	return len(fake.createArgsForCall)
 }
 
-func (fake *FakeTagCreator) CreateCalls(stub func(models.Tag) (uuid.UUID, error)) {
+func (fake *FakeTagCreator) CreateCalls(stub func(domain.Tag) (domain.Id, error)) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = stub
 }
 
-func (fake *FakeTagCreator) CreateArgsForCall(i int) models.Tag {
+func (fake *FakeTagCreator) CreateArgsForCall(i int) domain.Tag {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
 	argsForCall := fake.createArgsForCall[i]
@@ -75,28 +74,28 @@ func (fake *FakeTagCreator) CreateArgs() []FakeTagCreatorCreateArgs {
 	return args
 }
 
-func (fake *FakeTagCreator) CreateReturns(result1 uuid.UUID, result2 error) {
+func (fake *FakeTagCreator) CreateReturns(result1 domain.Id, result2 error) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = nil
 	fake.createReturns = struct {
-		result1 uuid.UUID
+		result1 domain.Id
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeTagCreator) CreateReturnsOnCall(i int, result1 uuid.UUID, result2 error) {
+func (fake *FakeTagCreator) CreateReturnsOnCall(i int, result1 domain.Id, result2 error) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = nil
 	if fake.createReturnsOnCall == nil {
 		fake.createReturnsOnCall = make(map[int]struct {
-			result1 uuid.UUID
+			result1 domain.Id
 			result2 error
 		})
 	}
 	fake.createReturnsOnCall[i] = struct {
-		result1 uuid.UUID
+		result1 domain.Id
 		result2 error
 	}{result1, result2}
 }

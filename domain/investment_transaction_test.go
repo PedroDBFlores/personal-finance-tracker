@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"math/big"
@@ -13,8 +13,8 @@ func TestNewInvestmentTransaction(t *testing.T) {
 	investmentId := uuid.New()
 	txType := Buy
 	amount := big.NewInt(10000) // $100.00
-	quantity := big.NewInt(100)  // 1.00 shares
-	price := big.NewInt(10000)   // $100.00 per share
+	quantity := big.NewInt(100) // 1.00 shares
+	price := big.NewInt(10000)  // $100.00 per share
 	date := time.Now()
 	description := "Test Transaction"
 
@@ -106,14 +106,14 @@ func TestInvestmentTransactionDefaults(t *testing.T) {
 	description := ""
 
 	transaction := InvestmentTransaction{
-		Id:            id,
-		InvestmentId:  investmentId,
-		Type:          txType,
-		Amount:        *amount,
-		Quantity:      *quantity,
-		Price:         *price,
-		Date:          date,
-		Description:   description,
+		Id:           id,
+		InvestmentId: investmentId,
+		Type:         txType,
+		Amount:       *amount,
+		Quantity:     *quantity,
+		Price:        *price,
+		Date:         date,
+		Description:  description,
 	}
 
 	if transaction.Id != id {

@@ -4,12 +4,12 @@ package portsfakes
 import (
 	"sync"
 
-	"github.com/pedrodbflores/personal-finance-tracker/models"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeTagUpdater struct {
-	UpdateStub        func(models.Tag) error
+	UpdateStub        func(domain.Tag) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []FakeTagUpdaterUpdateArgs
 	updateReturns     struct {
@@ -25,10 +25,10 @@ type FakeTagUpdater struct {
 
 // FakeTagUpdaterUpdateArgs holds the arguments of one call to Update.
 type FakeTagUpdaterUpdateArgs struct {
-	Arg1 models.Tag
+	Arg1 domain.Tag
 }
 
-func (fake *FakeTagUpdater) Update(arg1 models.Tag) error {
+func (fake *FakeTagUpdater) Update(arg1 domain.Tag) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeTagUpdaterUpdateArgs{arg1})
@@ -51,13 +51,13 @@ func (fake *FakeTagUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeTagUpdater) UpdateCalls(stub func(models.Tag) error) {
+func (fake *FakeTagUpdater) UpdateCalls(stub func(domain.Tag) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeTagUpdater) UpdateArgsForCall(i int) models.Tag {
+func (fake *FakeTagUpdater) UpdateArgsForCall(i int) domain.Tag {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]

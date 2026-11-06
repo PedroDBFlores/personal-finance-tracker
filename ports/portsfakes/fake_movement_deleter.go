@@ -3,13 +3,13 @@ package portsfakes
 
 import (
 	"sync"
-	"uuid"
 
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/ports"
 )
 
 type FakeMovementDeleter struct {
-	DeleteStub        func(uuid.UUID, uuid.UUID) error
+	DeleteStub        func(domain.Id, domain.Id) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []FakeMovementDeleterDeleteArgs
 	deleteReturns     struct {
@@ -25,11 +25,11 @@ type FakeMovementDeleter struct {
 
 // FakeMovementDeleterDeleteArgs holds the arguments of one call to Delete.
 type FakeMovementDeleterDeleteArgs struct {
-	Arg1 uuid.UUID
-	Arg2 uuid.UUID
+	Arg1 domain.Id
+	Arg2 domain.Id
 }
 
-func (fake *FakeMovementDeleter) Delete(arg1 uuid.UUID, arg2 uuid.UUID) error {
+func (fake *FakeMovementDeleter) Delete(arg1 domain.Id, arg2 domain.Id) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, FakeMovementDeleterDeleteArgs{arg1, arg2})
@@ -52,13 +52,13 @@ func (fake *FakeMovementDeleter) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeMovementDeleter) DeleteCalls(stub func(uuid.UUID, uuid.UUID) error) {
+func (fake *FakeMovementDeleter) DeleteCalls(stub func(domain.Id, domain.Id) error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
 }
 
-func (fake *FakeMovementDeleter) DeleteArgsForCall(i int) (uuid.UUID, uuid.UUID) {
+func (fake *FakeMovementDeleter) DeleteArgsForCall(i int) (domain.Id, domain.Id) {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	argsForCall := fake.deleteArgsForCall[i]
