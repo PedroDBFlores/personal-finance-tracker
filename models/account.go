@@ -11,9 +11,9 @@ import (
 type AccountType string
 
 const (
-	Bank       AccountType = "Bank"
-	Brokerage  AccountType = "Brokerage"
-	CreditCard AccountType = "CreditCard"
+	AccountTypeBank       AccountType = "Bank"
+	AccountTypeBrokerage  AccountType = "Brokerage"
+	AccountTypeCreditCard AccountType = "CreditCard"
 )
 
 // Account represents a financial account (e.g., savings, brokerage, credit card)
@@ -48,7 +48,7 @@ func (a Account) CalculateBalance(movements []Movement) big.Int {
 	for _, movement := range movements {
 		if movement.AccountId == a.Id {
 			switch movement.Type {
-			case Credit:
+			case MovementTypeCredit:
 				balance.Add(balance, &movement.Value)
 			case Debit:
 				balance.Sub(balance, &movement.Value)
@@ -65,7 +65,7 @@ func (a Account) CalculateBalanceAt(movements []Movement, snapshotTime time.Time
 	for _, movement := range movements {
 		if (movement.AccountId == a.Id) && (movement.Date.Before(snapshotTime) || movement.Date.Equal(snapshotTime)) {
 			switch movement.Type {
-			case Credit:
+			case MovementTypeCredit:
 				balance.Add(balance, &movement.Value)
 			case Debit:
 				balance.Sub(balance, &movement.Value)

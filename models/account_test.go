@@ -10,7 +10,7 @@ import (
 func TestNewAccount(t *testing.T) {
 	id := uuid.New()
 	name := "Test Account"
-	accountType := Bank
+	accountType := AccountTypeBank
 	currency := "USD"
 	createdAt := time.Now()
 
@@ -35,7 +35,7 @@ func TestNewAccount(t *testing.T) {
 
 func TestCalculateBalance(t *testing.T) {
 	accountId := uuid.New()
-	account := NewAccount(accountId, "Test Account", Bank, "USD", time.Now())
+	account := NewAccount(accountId, "Test Account", AccountTypeBank, "USD", time.Now())
 
 	// Create movements for the account
 	creditValue := big.NewInt(100000) // $1000.00
@@ -45,7 +45,7 @@ func TestCalculateBalance(t *testing.T) {
 			Id:          uuid.New(),
 			Description: "Salary",
 			Value:       *creditValue,
-			Type:        Credit,
+			Type:        MovementTypeCredit,
 			Date:        time.Now(),
 			AccountId:   accountId,
 			Tags:        nil,
@@ -71,7 +71,7 @@ func TestCalculateBalance(t *testing.T) {
 
 func TestCalculateBalanceAt(t *testing.T) {
 	accountId := uuid.New()
-	account := NewAccount(accountId, "Test Account", Bank, "USD", time.Now())
+	account := NewAccount(accountId, "Test Account", AccountTypeBank, "USD", time.Now())
 
 	now := time.Now()
 	snapshotTime := now.AddDate(0, 1, 0) // 1 month from now
@@ -83,7 +83,7 @@ func TestCalculateBalanceAt(t *testing.T) {
 			Id:          uuid.New(),
 			Description: "Salary",
 			Value:       *creditValue,
-			Type:        Credit,
+			Type:        MovementTypeCredit,
 			Date:        now,
 			AccountId:   accountId,
 			Tags:        nil,
@@ -102,7 +102,7 @@ func TestCalculateBalanceAt(t *testing.T) {
 		Id:          uuid.New(),
 		Description: "Future Salary",
 		Value:       *creditValue,
-		Type:        Credit,
+		Type:        MovementTypeCredit,
 		Date:        snapshotTime.AddDate(0, 1, 0), // 2 months from now
 		AccountId:   accountId,
 		Tags:        nil,
@@ -119,8 +119,8 @@ func TestCalculateBalanceAt(t *testing.T) {
 func TestCalculateBalanceWithDifferentAccount(t *testing.T) {
 	accountId1 := uuid.New()
 	accountId2 := uuid.New()
-	account1 := NewAccount(accountId1, "Account 1", Bank, "USD", time.Now())
-	account2 := NewAccount(accountId2, "Account 2", Bank, "USD", time.Now())
+	account1 := NewAccount(accountId1, "Account 1", AccountTypeBank, "USD", time.Now())
+	account2 := NewAccount(accountId2, "Account 2", AccountTypeBank, "USD", time.Now())
 
 	// Movement for account 1
 	creditValue := big.NewInt(100000) // $1000.00
@@ -129,7 +129,7 @@ func TestCalculateBalanceWithDifferentAccount(t *testing.T) {
 			Id:          uuid.New(),
 			Description: "Salary",
 			Value:       *creditValue,
-			Type:        Credit,
+			Type:        MovementTypeCredit,
 			Date:        time.Now(),
 			AccountId:   accountId1,
 			Tags:        nil,

@@ -4,6 +4,6 @@ package models
 type MovementType string
 
 const (
-	Credit MovementType = "Credit"
-	Debit  MovementType = "Debit"
+	MovementTypeCredit MovementType = "Credit"
+	MovementTypeDebit  MovementType = "Debit"
 )

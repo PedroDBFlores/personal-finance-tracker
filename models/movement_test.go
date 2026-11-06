@@ -11,12 +11,11 @@ func TestNewMovement(t *testing.T) {
 	id := uuid.New()
 	description := "Test Movement"
 	value := big.NewInt(10000) // $100.00
-	movementType := Credit
+	movementType := MovementTypeCredit
 	date := time.Now()
-	accountId := uuid.New()
 	tags := []uuid.UUID{uuid.New(), uuid.New()}
 
-	movement := NewMovement(id, description, *value, movementType, date, accountId, tags)
+	movement := NewMovement(id, description, *value, movementType, date, tags)
 
 	if movement.Id != id {
 		t.Errorf("Expected Id %v, got %v", id, movement.Id)
@@ -33,9 +32,7 @@ func TestNewMovement(t *testing.T) {
 	if !movement.Date.Equal(date) {
 		t.Errorf("Expected Date %v, got %v", date, movement.Date)
 	}
-	if movement.AccountId != accountId {
-		t.Errorf("Expected AccountId %v, got %v", accountId, movement.AccountId)
-	}
+
 	if len(movement.Tags) != len(tags) {
 		t.Errorf("Expected Tags length %d, got %d", len(tags), len(movement.Tags))
 	}
@@ -50,9 +47,8 @@ func TestMovementDefaults(t *testing.T) {
 	id := uuid.New()
 	description := "Test Movement"
 	value := big.NewInt(0)
-	movementType := Debit
+	movementType := MovementTypeDebit
 	date := time.Time{}
-	accountId := uuid.Nil()
 	tags := []uuid.UUID{}
 
 	movement := Movement{
@@ -61,7 +57,6 @@ func TestMovementDefaults(t *testing.T) {
 		Value:       *value,
 		Type:        movementType,
 		Date:        date,
-		AccountId:   accountId,
 		Tags:        tags,
 	}
 
@@ -76,9 +71,6 @@ func TestMovementDefaults(t *testing.T) {
 	}
 	if movement.Type != movementType {
 		t.Errorf("Expected Type %s, got %s", movementType, movement.Type)
-	}
-	if movement.AccountId != accountId {
-		t.Errorf("Expected AccountId %v, got %v", accountId, movement.AccountId)
 	}
 	if len(movement.Tags) != len(tags) {
 		t.Errorf("Expected Tags length %d, got %d", len(tags), len(movement.Tags))

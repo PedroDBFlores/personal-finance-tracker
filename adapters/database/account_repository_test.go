@@ -34,7 +34,7 @@ func TestAccountRepository(t *testing.T) {
 		now := time.Now()
 		account := models.Account{
 			Name:      "Random Bank",
-			Type:      models.Bank,
+			Type:      models.AccountTypeBank,
 			Currency:  "EUR",
 			CreatedAt: now,
 		}
@@ -47,7 +47,7 @@ func TestAccountRepository(t *testing.T) {
 		require.NotNil(t, acc)
 		require.Equal(t, id, uuid.MustParse((*acc)["id"].(string)))
 		require.Equal(t, "Random Bank", (*acc)["name"])
-		require.Equal(t, string(models.Bank), (*acc)["type"])
+		require.Equal(t, string(models.AccountTypeBank), (*acc)["type"])
 		require.Equal(t, "EUR", (*acc)["currency"])
 		timeParsed, err := time.Parse(time.RFC3339, (*acc)["createdAt"].(string))
 		require.NoError(t, err)
@@ -62,7 +62,7 @@ func TestAccountRepository(t *testing.T) {
 			now := time.Now()
 			account := models.Account{
 				Name:      "Random Bank",
-				Type:      models.Bank,
+				Type:      models.AccountTypeBank,
 				Currency:  "EUR",
 				CreatedAt: now,
 			}
@@ -75,7 +75,7 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, id, acc.Id)
 			require.Equal(t, "Random Bank", acc.Name)
-			require.Equal(t, models.Bank, acc.Type)
+			require.Equal(t, models.AccountTypeBank, acc.Type)
 			require.Equal(t, "EUR", acc.Currency)
 			require.WithinDuration(t, now, acc.CreatedAt, 0)
 		})
@@ -100,7 +100,7 @@ func TestAccountRepository(t *testing.T) {
 			now := time.Now()
 			account := models.Account{
 				Name:      "Random Bank",
-				Type:      models.Bank,
+				Type:      models.AccountTypeBank,
 				Currency:  "EUR",
 				CreatedAt: now,
 			}
@@ -128,7 +128,7 @@ func TestAccountRepository(t *testing.T) {
 			account := models.Account{
 				Id:        uuid.NewV7(),
 				Name:      "Non-existent Bank",
-				Type:      models.Bank,
+				Type:      models.AccountTypeBank,
 				Currency:  "EUR",
 				CreatedAt: time.Now(),
 			}
@@ -144,13 +144,13 @@ func TestAccountRepository(t *testing.T) {
 		now := time.Now()
 		accountOne := models.Account{
 			Name:      "Random Bank",
-			Type:      models.Bank,
+			Type:      models.AccountTypeBank,
 			Currency:  "EUR",
 			CreatedAt: now,
 		}
 		accountTwo := models.Account{
 			Name:      "A fine brokerage",
-			Type:      models.Brokerage,
+			Type:      models.AccountTypeBrokerage,
 			Currency:  "USD",
 			CreatedAt: now,
 		}
@@ -163,11 +163,11 @@ func TestAccountRepository(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, accounts, 2)
 		require.Equal(t, "Random Bank", accounts[0].Name)
-		require.Equal(t, models.Bank, accounts[0].Type)
+		require.Equal(t, models.AccountTypeBank, accounts[0].Type)
 		require.Equal(t, "EUR", accounts[0].Currency)
 		require.WithinDuration(t, now, accounts[0].CreatedAt, 0)
 		require.Equal(t, "A fine brokerage", accounts[1].Name)
-		require.Equal(t, models.Brokerage, accounts[1].Type)
+		require.Equal(t, models.AccountTypeBrokerage, accounts[1].Type)
 		require.Equal(t, "USD", accounts[1].Currency)
 		require.WithinDuration(t, now, accounts[1].CreatedAt, 0)
 	})
@@ -180,7 +180,7 @@ func TestAccountRepository(t *testing.T) {
 			now := time.Now()
 			account := models.Account{
 				Name:      "Random Bank",
-				Type:      models.Bank,
+				Type:      models.AccountTypeBank,
 				Currency:  "EUR",
 				CreatedAt: now,
 			}

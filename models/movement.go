@@ -19,21 +19,18 @@ type Movement struct {
 	Type MovementType
 	// Date defines the movement's date
 	Date time.Time
-	// AccountId links the movement to an account
-	AccountId uuid.UUID
 	// Tags links the movement to tags for categorization
 	Tags []uuid.UUID
 }
 
 // NewMovement creates a new Movement based on the provided parameters
-func NewMovement(id uuid.UUID, description string, value big.Int, movementType MovementType, date time.Time, accountId uuid.UUID, tags []uuid.UUID) Movement {
+func NewMovement(id uuid.UUID, description string, value big.Int, movementType MovementType, date time.Time, tags []uuid.UUID) Movement {
 	return Movement{
 		Id:          id,
 		Description: description,
 		Value:       value,
 		Type:        movementType,
 		Date:        date,
-		AccountId:   accountId,
 		Tags:        tags,
 	}
 }
