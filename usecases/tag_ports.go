@@ -1,4 +1,4 @@
-package ports
+package usecases
 
 import "github.com/pedrodbflores/personal-finance-tracker/domain"
 
