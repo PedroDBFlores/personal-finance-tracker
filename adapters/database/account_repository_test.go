@@ -30,7 +30,7 @@ func TestAccountRepository(t *testing.T) {
 
 		id, err := repo.Create(account)
 		require.NoError(t, err)
-		require.NotEqual(t, domain.Id(uuid.Nil()), id)
+		require.NotEqual(t, domain.Id{}, id)
 
 		acc, err := repo.Get(id)
 		require.NoError(t, err)
@@ -56,7 +56,7 @@ func TestAccountRepository(t *testing.T) {
 			}
 			id, err := repo.Create(account)
 			require.NoError(t, err)
-			require.NotEqual(t, domain.Id(uuid.Nil()), id)
+			require.NotEqual(t, domain.Id{}, id)
 
 			acc, err := repo.Get(id)
 
@@ -73,7 +73,7 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 
-			id := domain.Id(uuid.NewV7())
+			id := domain.NewId()
 			acc, err := repo.Get(id)
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", id)))
 			require.Nil(t, acc)
@@ -188,7 +188,7 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 
-			id := domain.Id(uuid.NewV7())
+			id := domain.NewId()
 			err = repo.Delete(id)
 
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", id)))

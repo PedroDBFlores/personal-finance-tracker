@@ -19,9 +19,8 @@ type Movement struct {
 }
 
 // NewMovement creates a new Movement based on the provided parameters
-func NewMovement(id Id, description string, value Money, movementType MovementType, date time.Time) Movement {
+func NewMovement(description string, value Money, movementType MovementType, date time.Time) Movement {
 	return Movement{
-		Id:          id,
 		Description: description,
 		Value:       value,
 		Type:        movementType,

@@ -82,21 +82,49 @@ func (r *MovementRepository) Get(accountId, id domain.Id) (*domain.Movement, err
 }
 
 func (r *MovementRepository) List(accountId domain.Id) ([]domain.Movement, error) {
-	return nil, nil
+	movements, err := ListAllByKey[movement](r.db, fmt.Appendf(nil, movementKeyPrefix, accountId))
+	if err != nil {
+		return []domain.Movement{}, err
+	}
+	var modelMovements []domain.Movement
+	for _, movements := range movements {
+		modelMovements = append(modelMovements, movementToDomain(movements))
+	}
+
+	return modelMovements, nil
 }
 
 func (r *MovementRepository) Delete(accountId, id domain.Id) error {
-	return nil
+	accKey := accountKey(accountId)
+	ok, err := IsKeyPresent(r.db, accKey)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return app_errors.NewResourceNotFoundError("Account", string(accKey))
+	}
+	key := movementKey(accountId, id)
+	ok, err = IsKeyPresent(r.db, key)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return app_errors.NewResourceNotFoundError("Movement", string(key))
+	}
+	return r.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete(key)
+	})
 }
 
 func movementToDomain(m movement) domain.Movement {
-	return domain.NewMovement(
-		m.Id,
+	d := domain.NewMovement(
 		m.Description,
 		m.Value,
 		m.MovementType,
 		m.Date,
 	)
+	d.Id = m.Id
+	return d
 }
 
 func domainToMovement(m domain.Movement) movement {

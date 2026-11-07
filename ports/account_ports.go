@@ -4,8 +4,6 @@ import (
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 )
 
-//go:generate go tool counterfeiter -generate
-
 //counterfeiter:generate . AccountCreator
 type AccountCreator interface {
 	Create(account domain.Account) (domain.Id, error)

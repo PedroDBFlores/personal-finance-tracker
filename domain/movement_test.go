@@ -6,17 +6,13 @@ import (
 )
 
 func TestNewMovement(t *testing.T) {
-	id := NewId()
 	description := "Test Movement"
 	value := Money(10000)
 	movementType := MovementTypeCredit
 	date := time.Now()
 
-	movement := NewMovement(id, description, value, movementType, date)
+	movement := NewMovement(description, value, movementType, date)
 
-	if movement.Id != id {
-		t.Errorf("Expected Id %v, got %v", id, movement.Id)
-	}
 	if movement.Description != description {
 		t.Errorf("Expected Description %s, got %s", description, movement.Description)
 	}
