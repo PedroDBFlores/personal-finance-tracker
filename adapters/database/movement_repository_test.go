@@ -227,7 +227,6 @@ func TestMovementRepository(t *testing.T) {
 			err = repo.Delete(ctx, *accountId, id)
 
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Movement", fmt.Sprintf("account:%s:movement:%s", accountId, id)))
-
 		})
 	})
 }

@@ -1,23 +1,30 @@
 package dtos
 
-import "time"
+import (
+	"time"
 
-// AccountType defines the type of account (Bank, Brokerage, CreditCard, etc.)
-type AccountType string
-
-const (
-	Bank       AccountType = "Bank"
-	Brokerage  AccountType = "Brokerage"
-	CreditCard AccountType = "CreditCard"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 )
 
 type CreateAccountDto struct {
 	// Name defines the account name (e.g., "Chase Savings", "Fidelity Brokerage")
 	Name string
 	// Type defines the type of account.
-	Type AccountType
+	Type domain.AccountType
 	// Currency defines the account's currency (e.g., "USD", "EUR")
-	Currency string
+	Currency domain.Currency
 	// CreatedAt defines when the account was created.
 	CreatedAt time.Time
+}
+
+func NewCreateAccountDto(name string, accType domain.AccountType, currency domain.Currency, createdAt time.Time) CreateAccountDto {
+	return CreateAccountDto{name, accType, currency, createdAt}
+}
+
+type ListAccountDto struct {
+	domain.Account
+}
+
+func NewListAccountDto(acc domain.Account) ListAccountDto {
+	return ListAccountDto{acc}
 }
