@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-	"uuid"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
@@ -33,21 +32,21 @@ func NewMovementRepository(db *badger.DB) MovementRepository {
 	return MovementRepository{db: db}
 }
 
-func (r *MovementRepository) Create(accountId domain.Id, movement domain.Movement) (domain.Id, error) {
+func (r *MovementRepository) Create(accountId domain.Id, movement domain.Movement) (*domain.Id, error) {
 	id := domain.NewId()
 	key := movementKey(accountId, id)
 	movement.Id = id
 	b, err := json.Marshal(domainToMovement(movement))
 	if err != nil {
-		return domain.Id(uuid.Nil()), err
+		return nil, err
 	}
 	if err := r.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, b)
 	}); err != nil {
-		return domain.Id(uuid.Nil()), err
+		return nil, err
 	}
 
-	return id, nil
+	return &id, nil
 }
 
 func (r *MovementRepository) Update(accountId domain.Id, movement domain.Movement) error {

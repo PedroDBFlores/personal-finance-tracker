@@ -34,21 +34,21 @@ func NewAccountRepository(db *badger.DB) AccountRepository {
 	return AccountRepository{db}
 }
 
-func (r *AccountRepository) Create(account domain.Account) (domain.Id, error) {
+func (r *AccountRepository) Create(account domain.Account) (*domain.Id, error) {
 	id := domain.Id(uuid.NewV7())
 	key := accountKey(id)
 	account.Id = id
 	b, err := json.Marshal(domainToRepo(account))
 	if err != nil {
-		return domain.Id(uuid.Nil()), err
+		return nil, err
 	}
 	if err := r.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(key, b)
 	}); err != nil {
-		return domain.Id(uuid.Nil()), err
+		return nil, err
 	}
 
-	return id, nil
+	return &id, nil
 }
 
 func (r *AccountRepository) Update(account domain.Account) error {

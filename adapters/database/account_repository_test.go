@@ -32,10 +32,10 @@ func TestAccountRepository(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEqual(t, domain.Id{}, id)
 
-		acc, err := repo.Get(id)
+		acc, err := repo.Get(*id)
 		require.NoError(t, err)
 		require.NotNil(t, acc)
-		require.Equal(t, id, acc.Id)
+		require.Equal(t, *id, acc.Id)
 		require.Equal(t, "Random Bank", acc.Name)
 		require.Equal(t, domain.AccountTypeBank, acc.Type)
 		require.Equal(t, domain.CurrencyEUR, acc.Currency)
@@ -58,10 +58,10 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			require.NotEqual(t, domain.Id{}, id)
 
-			acc, err := repo.Get(id)
+			acc, err := repo.Get(*id)
 
 			require.NoError(t, err)
-			require.Equal(t, id, acc.Id)
+			require.Equal(t, *id, acc.Id)
 			require.Equal(t, "Random Bank", acc.Name)
 			require.Equal(t, domain.AccountTypeBank, acc.Type)
 			require.Equal(t, domain.CurrencyEUR, acc.Currency)
@@ -97,13 +97,13 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			require.NotEqual(t, domain.Id(uuid.Nil()), id)
 
-			acc, err := repo.Get(id)
+			acc, err := repo.Get(*id)
 			require.NoError(t, err)
 			acc.Name = "Right Bank"
 			err = repo.Update(*acc)
 			require.NoError(t, err)
 
-			updatedAcc, err := repo.Get(id)
+			updatedAcc, err := repo.Get(*id)
 			require.NoError(t, err)
 			require.Equal(t, "Right Bank", updatedAcc.Name)
 		})
@@ -175,10 +175,10 @@ func TestAccountRepository(t *testing.T) {
 			id, err := repo.Create(account)
 			require.NoError(t, err)
 
-			err = repo.Delete(id)
+			err = repo.Delete(*id)
 			require.NoError(t, err)
 
-			acc, err := repo.Get(id)
+			acc, err := repo.Get(*id)
 			require.Error(t, err)
 			require.Nil(t, acc)
 		})

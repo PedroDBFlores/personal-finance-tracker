@@ -36,11 +36,11 @@ func TestMovementRepository(t *testing.T) {
 			domain.MovementTypeDebit,
 			time.Now(),
 		)
-		id, err := repo.Create(accountId, movement)
+		id, err := repo.Create(*accountId, movement)
 		require.NoError(t, err)
 		require.NotEqual(t, domain.Id{}, id)
 
-		mov, err := repo.Get(accountId, id)
+		mov, err := repo.Get(*accountId, *id)
 		require.NoError(t, err)
 		require.NotNil(t, mov)
 		require.Equal(t, domain.MovementTypeDebit, mov.Type)
@@ -62,10 +62,10 @@ func TestMovementRepository(t *testing.T) {
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
-			id, err := repo.Create(accountId, movement)
+			id, err := repo.Create(*accountId, movement)
 			require.NoError(t, err)
 
-			mov, err := repo.Get(accountId, id)
+			mov, err := repo.Get(*accountId, *id)
 
 			require.NoError(t, err)
 			require.NotNil(t, mov)
@@ -102,8 +102,8 @@ func TestMovementRepository(t *testing.T) {
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
-			id, err := repo.Create(accountId, movement)
-			movement.Id = id
+			id, err := repo.Create(*accountId, movement)
+			movement.Id = *id
 			require.NoError(t, err)
 
 			movement.Description = "Updated Movement"
@@ -111,10 +111,10 @@ func TestMovementRepository(t *testing.T) {
 			movement.Type = domain.MovementTypeCredit
 			movement.Date = time.Now()
 
-			err = repo.Update(accountId, movement)
+			err = repo.Update(*accountId, movement)
 			require.NoError(t, err)
 
-			updatedMov, err := repo.Get(accountId, id)
+			updatedMov, err := repo.Get(*accountId, *id)
 			require.NoError(t, err)
 			require.NotNil(t, updatedMov)
 			require.Equal(t, movement.Description, updatedMov.Description)
@@ -155,25 +155,25 @@ func TestMovementRepository(t *testing.T) {
 			domain.MovementTypeDebit,
 			time.Now(),
 		)
-		firstId, err := repo.Create(accountId, firstMovement)
+		firstId, err := repo.Create(*accountId, firstMovement)
 		require.NoError(t, err)
-		firstMovement.Id = firstId
+		firstMovement.Id = *firstId
 		secondMovement := domain.NewMovement(
 			"Test Movement 2",
 			domain.Money(10000),
 			domain.MovementTypeCredit,
 			time.Now(),
 		)
-		secondId, err := repo.Create(accountId, secondMovement)
+		secondId, err := repo.Create(*accountId, secondMovement)
 		require.NoError(t, err)
-		secondMovement.Id = secondId
+		secondMovement.Id = *secondId
 
-		accountMovements, err := repo.List(accountId)
+		accountMovements, err := repo.List(*accountId)
 		require.NoError(t, err)
 		require.Len(t, accountMovements, 2)
 
-		require.Equal(t, firstId, firstMovement.Id)
-		require.Equal(t, secondId, secondMovement.Id)
+		require.Equal(t, *firstId, firstMovement.Id)
+		require.Equal(t, *secondId, secondMovement.Id)
 	})
 
 	t.Run("delete", func(t *testing.T) {
@@ -190,13 +190,13 @@ func TestMovementRepository(t *testing.T) {
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
-			id, err := repo.Create(accountId, movement)
+			id, err := repo.Create(*accountId, movement)
 			require.NoError(t, err)
 
-			err = repo.Delete(accountId, id)
+			err = repo.Delete(*accountId, *id)
 			require.NoError(t, err)
 
-			mov, err := repo.Get(accountId, id)
+			mov, err := repo.Get(*accountId, *id)
 			require.Error(t, err)
 			require.Nil(t, mov)
 		})
@@ -222,7 +222,7 @@ func TestMovementRepository(t *testing.T) {
 			repo := database.NewMovementRepository(db)
 
 			id := domain.NewId()
-			err = repo.Delete(accountId, id)
+			err = repo.Delete(*accountId, id)
 
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Movement", fmt.Sprintf("account:%s:movement:%s", accountId, id)))
 
