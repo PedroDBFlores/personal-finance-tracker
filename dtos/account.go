@@ -21,10 +21,10 @@ func NewCreateAccountDto(name string, accType domain.AccountType, currency domai
 	return CreateAccountDto{name, accType, currency, createdAt}
 }
 
-type ListAccountDto struct {
+type AccountDto struct {
 	domain.Account
 }
 
-func NewListAccountDto(acc domain.Account) ListAccountDto {
-	return ListAccountDto{acc}
+func NewAccountDto(acc domain.Account) AccountDto {
+	return AccountDto{acc}
 }

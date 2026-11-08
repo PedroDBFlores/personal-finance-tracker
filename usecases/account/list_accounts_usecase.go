@@ -17,14 +17,14 @@ func NewListAccountsUseCase(lister usecases.AccountLister, logger *slog.Logger) 
 	return ListAccountsUseCase{lister, logger}
 }
 
-func (u *ListAccountsUseCase) Execute(ctx context.Context) ([]dtos.ListAccountDto, error) {
+func (u *ListAccountsUseCase) Execute(ctx context.Context) ([]dtos.AccountDto, error) {
 	result, err := u.lister.List(ctx)
-	var listAccountDtos []dtos.ListAccountDto
+	var listAccountDtos []dtos.AccountDto
 	if err != nil {
 		return listAccountDtos, err
 	}
 	for _, account := range result {
-		listAccountDtos = append(listAccountDtos, dtos.NewListAccountDto(account))
+		listAccountDtos = append(listAccountDtos, dtos.NewAccountDto(account))
 	}
 	return listAccountDtos, nil
 }

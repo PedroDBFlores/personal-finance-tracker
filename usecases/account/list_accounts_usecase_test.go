@@ -25,9 +25,9 @@ func TestListAccountsUseCase(t *testing.T) {
 			domain.NewAccount(domain.NewId(), "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, time.Now()),
 			domain.NewAccount(domain.NewId(), "Credit Card B", domain.AccountTypeCreditCard, domain.CurrencyEUR, time.Now()),
 		}
-		var listAccountDtos []dtos.ListAccountDto
+		var listAccountDtos []dtos.AccountDto
 		for _, account := range listAccounts {
-			listAccountDtos = append(listAccountDtos, dtos.NewListAccountDto(account))
+			listAccountDtos = append(listAccountDtos, dtos.NewAccountDto(account))
 		}
 		accountLister.ListReturns(listAccounts, nil)
 		useCase := account.NewListAccountsUseCase(&accountLister, logger)
@@ -36,6 +36,9 @@ func TestListAccountsUseCase(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, listAccountDtos, result)
+
+		calledCtx := accountLister.ListArgsForCall(0)
+		require.Equal(t, ctx, calledCtx)
 	})
 
 	t.Run("returns an error if it fails to list accounts", func(t *testing.T) {
