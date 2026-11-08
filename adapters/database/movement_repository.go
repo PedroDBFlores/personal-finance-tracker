@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -32,7 +33,7 @@ func NewMovementRepository(db *badger.DB) MovementRepository {
 	return MovementRepository{db: db}
 }
 
-func (r *MovementRepository) Create(accountId domain.Id, movement domain.Movement) (*domain.Id, error) {
+func (r *MovementRepository) Create(_ context.Context, accountId domain.Id, movement domain.Movement) (*domain.Id, error) {
 	id := domain.NewId()
 	key := movementKey(accountId, id)
 	movement.Id = id
@@ -49,7 +50,7 @@ func (r *MovementRepository) Create(accountId domain.Id, movement domain.Movemen
 	return &id, nil
 }
 
-func (r *MovementRepository) Update(accountId domain.Id, movement domain.Movement) error {
+func (r *MovementRepository) Update(_ context.Context, accountId domain.Id, movement domain.Movement) error {
 	key := movementKey(accountId, movement.Id)
 	ok, err := IsKeyPresent(r.db, key)
 	if err != nil {
@@ -70,7 +71,7 @@ func (r *MovementRepository) Update(accountId domain.Id, movement domain.Movemen
 	})
 }
 
-func (r *MovementRepository) Get(accountId, id domain.Id) (*domain.Movement, error) {
+func (r *MovementRepository) Get(_ context.Context, accountId, id domain.Id) (*domain.Movement, error) {
 	key := movementKey(accountId, id)
 	out, err := GetByKey[movement](r.db, key)
 	if err != nil {
@@ -80,7 +81,7 @@ func (r *MovementRepository) Get(accountId, id domain.Id) (*domain.Movement, err
 	return &modelMovement, nil
 }
 
-func (r *MovementRepository) List(accountId domain.Id) ([]domain.Movement, error) {
+func (r *MovementRepository) List(_ context.Context, accountId domain.Id) ([]domain.Movement, error) {
 	movements, err := ListAllByKey[movement](r.db, fmt.Appendf(nil, movementKeyPrefix, accountId))
 	if err != nil {
 		return []domain.Movement{}, err
@@ -93,7 +94,7 @@ func (r *MovementRepository) List(accountId domain.Id) ([]domain.Movement, error
 	return modelMovements, nil
 }
 
-func (r *MovementRepository) Delete(accountId, id domain.Id) error {
+func (r *MovementRepository) Delete(_ context.Context, accountId, id domain.Id) error {
 	accKey := accountKey(accountId)
 	ok, err := IsKeyPresent(r.db, accKey)
 	if err != nil {

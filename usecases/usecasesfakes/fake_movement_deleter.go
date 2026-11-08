@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,7 +10,7 @@ import (
 )
 
 type FakeMovementDeleter struct {
-	DeleteStub        func(domain.Id, domain.Id) error
+	DeleteStub        func(context.Context, domain.Id, domain.Id) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []FakeMovementDeleterDeleteArgs
 	deleteReturns     struct {
@@ -25,20 +26,21 @@ type FakeMovementDeleter struct {
 
 // FakeMovementDeleterDeleteArgs holds the arguments of one call to Delete.
 type FakeMovementDeleterDeleteArgs struct {
-	Arg1 domain.Id
+	Arg1 context.Context
 	Arg2 domain.Id
+	Arg3 domain.Id
 }
 
-func (fake *FakeMovementDeleter) Delete(arg1 domain.Id, arg2 domain.Id) error {
+func (fake *FakeMovementDeleter) Delete(arg1 context.Context, arg2 domain.Id, arg3 domain.Id) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
-	fake.deleteArgsForCall = append(fake.deleteArgsForCall, FakeMovementDeleterDeleteArgs{arg1, arg2})
+	fake.deleteArgsForCall = append(fake.deleteArgsForCall, FakeMovementDeleterDeleteArgs{arg1, arg2, arg3})
 	stub := fake.DeleteStub
 	fakeReturns := fake.deleteReturns
-	fake.recordInvocation("Delete", []interface{}{arg1, arg2})
+	fake.recordInvocation("Delete", []interface{}{arg1, arg2, arg3})
 	fake.deleteMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -52,17 +54,17 @@ func (fake *FakeMovementDeleter) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeMovementDeleter) DeleteCalls(stub func(domain.Id, domain.Id) error) {
+func (fake *FakeMovementDeleter) DeleteCalls(stub func(context.Context, domain.Id, domain.Id) error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
 }
 
-func (fake *FakeMovementDeleter) DeleteArgsForCall(i int) (domain.Id, domain.Id) {
+func (fake *FakeMovementDeleter) DeleteArgsForCall(i int) (context.Context, domain.Id, domain.Id) {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	argsForCall := fake.deleteArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
 }
 
 func (fake *FakeMovementDeleter) DeleteArgs() []FakeMovementDeleterDeleteArgs {

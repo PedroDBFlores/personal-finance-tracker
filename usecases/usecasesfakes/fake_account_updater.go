@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,7 +10,7 @@ import (
 )
 
 type FakeAccountUpdater struct {
-	UpdateStub        func(domain.Account) error
+	UpdateStub        func(context.Context, domain.Account) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []FakeAccountUpdaterUpdateArgs
 	updateReturns     struct {
@@ -25,19 +26,20 @@ type FakeAccountUpdater struct {
 
 // FakeAccountUpdaterUpdateArgs holds the arguments of one call to Update.
 type FakeAccountUpdaterUpdateArgs struct {
-	Arg1 domain.Account
+	Arg1 context.Context
+	Arg2 domain.Account
 }
 
-func (fake *FakeAccountUpdater) Update(arg1 domain.Account) error {
+func (fake *FakeAccountUpdater) Update(arg1 context.Context, arg2 domain.Account) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
-	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeAccountUpdaterUpdateArgs{arg1})
+	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeAccountUpdaterUpdateArgs{arg1, arg2})
 	stub := fake.UpdateStub
 	fakeReturns := fake.updateReturns
-	fake.recordInvocation("Update", []interface{}{arg1})
+	fake.recordInvocation("Update", []interface{}{arg1, arg2})
 	fake.updateMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -51,17 +53,17 @@ func (fake *FakeAccountUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeAccountUpdater) UpdateCalls(stub func(domain.Account) error) {
+func (fake *FakeAccountUpdater) UpdateCalls(stub func(context.Context, domain.Account) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeAccountUpdater) UpdateArgsForCall(i int) domain.Account {
+func (fake *FakeAccountUpdater) UpdateArgsForCall(i int) (context.Context, domain.Account) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]
-	return argsForCall.Arg1
+	return argsForCall.Arg1, argsForCall.Arg2
 }
 
 func (fake *FakeAccountUpdater) UpdateArgs() []FakeAccountUpdaterUpdateArgs {

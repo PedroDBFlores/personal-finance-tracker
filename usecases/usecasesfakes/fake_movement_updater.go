@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,7 +10,7 @@ import (
 )
 
 type FakeMovementUpdater struct {
-	UpdateStub        func(domain.Id, domain.Movement) error
+	UpdateStub        func(context.Context, domain.Id, domain.Movement) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []FakeMovementUpdaterUpdateArgs
 	updateReturns     struct {
@@ -25,20 +26,21 @@ type FakeMovementUpdater struct {
 
 // FakeMovementUpdaterUpdateArgs holds the arguments of one call to Update.
 type FakeMovementUpdaterUpdateArgs struct {
-	Arg1 domain.Id
-	Arg2 domain.Movement
+	Arg1 context.Context
+	Arg2 domain.Id
+	Arg3 domain.Movement
 }
 
-func (fake *FakeMovementUpdater) Update(arg1 domain.Id, arg2 domain.Movement) error {
+func (fake *FakeMovementUpdater) Update(arg1 context.Context, arg2 domain.Id, arg3 domain.Movement) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
-	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeMovementUpdaterUpdateArgs{arg1, arg2})
+	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeMovementUpdaterUpdateArgs{arg1, arg2, arg3})
 	stub := fake.UpdateStub
 	fakeReturns := fake.updateReturns
-	fake.recordInvocation("Update", []interface{}{arg1, arg2})
+	fake.recordInvocation("Update", []interface{}{arg1, arg2, arg3})
 	fake.updateMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -52,17 +54,17 @@ func (fake *FakeMovementUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeMovementUpdater) UpdateCalls(stub func(domain.Id, domain.Movement) error) {
+func (fake *FakeMovementUpdater) UpdateCalls(stub func(context.Context, domain.Id, domain.Movement) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeMovementUpdater) UpdateArgsForCall(i int) (domain.Id, domain.Movement) {
+func (fake *FakeMovementUpdater) UpdateArgsForCall(i int) (context.Context, domain.Id, domain.Movement) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
 }
 
 func (fake *FakeMovementUpdater) UpdateArgs() []FakeMovementUpdaterUpdateArgs {

@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,15 +10,15 @@ import (
 )
 
 type FakeMovementCreator struct {
-	CreateStub        func(domain.Id, domain.Movement) (domain.Id, error)
+	CreateStub        func(context.Context, domain.Id, domain.Movement) (*domain.Id, error)
 	createMutex       sync.RWMutex
 	createArgsForCall []FakeMovementCreatorCreateArgs
 	createReturns     struct {
-		result1 domain.Id
+		result1 *domain.Id
 		result2 error
 	}
 	createReturnsOnCall map[int]struct {
-		result1 domain.Id
+		result1 *domain.Id
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -27,20 +28,21 @@ type FakeMovementCreator struct {
 
 // FakeMovementCreatorCreateArgs holds the arguments of one call to Create.
 type FakeMovementCreatorCreateArgs struct {
-	Arg1 domain.Id
-	Arg2 domain.Movement
+	Arg1 context.Context
+	Arg2 domain.Id
+	Arg3 domain.Movement
 }
 
-func (fake *FakeMovementCreator) Create(arg1 domain.Id, arg2 domain.Movement) (domain.Id, error) {
+func (fake *FakeMovementCreator) Create(arg1 context.Context, arg2 domain.Id, arg3 domain.Movement) (*domain.Id, error) {
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
-	fake.createArgsForCall = append(fake.createArgsForCall, FakeMovementCreatorCreateArgs{arg1, arg2})
+	fake.createArgsForCall = append(fake.createArgsForCall, FakeMovementCreatorCreateArgs{arg1, arg2, arg3})
 	stub := fake.CreateStub
 	fakeReturns := fake.createReturns
-	fake.recordInvocation("Create", []interface{}{arg1, arg2})
+	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3})
 	fake.createMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -54,17 +56,17 @@ func (fake *FakeMovementCreator) CreateCallCount() int {
 	return len(fake.createArgsForCall)
 }
 
-func (fake *FakeMovementCreator) CreateCalls(stub func(domain.Id, domain.Movement) (domain.Id, error)) {
+func (fake *FakeMovementCreator) CreateCalls(stub func(context.Context, domain.Id, domain.Movement) (*domain.Id, error)) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = stub
 }
 
-func (fake *FakeMovementCreator) CreateArgsForCall(i int) (domain.Id, domain.Movement) {
+func (fake *FakeMovementCreator) CreateArgsForCall(i int) (context.Context, domain.Id, domain.Movement) {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
 	argsForCall := fake.createArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
 }
 
 func (fake *FakeMovementCreator) CreateArgs() []FakeMovementCreatorCreateArgs {
@@ -75,28 +77,28 @@ func (fake *FakeMovementCreator) CreateArgs() []FakeMovementCreatorCreateArgs {
 	return args
 }
 
-func (fake *FakeMovementCreator) CreateReturns(result1 domain.Id, result2 error) {
+func (fake *FakeMovementCreator) CreateReturns(result1 *domain.Id, result2 error) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = nil
 	fake.createReturns = struct {
-		result1 domain.Id
+		result1 *domain.Id
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeMovementCreator) CreateReturnsOnCall(i int, result1 domain.Id, result2 error) {
+func (fake *FakeMovementCreator) CreateReturnsOnCall(i int, result1 *domain.Id, result2 error) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = nil
 	if fake.createReturnsOnCall == nil {
 		fake.createReturnsOnCall = make(map[int]struct {
-			result1 domain.Id
+			result1 *domain.Id
 			result2 error
 		})
 	}
 	fake.createReturnsOnCall[i] = struct {
-		result1 domain.Id
+		result1 *domain.Id
 		result2 error
 	}{result1, result2}
 }

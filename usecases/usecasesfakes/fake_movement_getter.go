@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,7 +10,7 @@ import (
 )
 
 type FakeMovementGetter struct {
-	GetStub        func(domain.Id, domain.Id) (*domain.Movement, error)
+	GetStub        func(context.Context, domain.Id, domain.Id) (*domain.Movement, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []FakeMovementGetterGetArgs
 	getReturns     struct {
@@ -27,20 +28,21 @@ type FakeMovementGetter struct {
 
 // FakeMovementGetterGetArgs holds the arguments of one call to Get.
 type FakeMovementGetterGetArgs struct {
-	Arg1 domain.Id
+	Arg1 context.Context
 	Arg2 domain.Id
+	Arg3 domain.Id
 }
 
-func (fake *FakeMovementGetter) Get(arg1 domain.Id, arg2 domain.Id) (*domain.Movement, error) {
+func (fake *FakeMovementGetter) Get(arg1 context.Context, arg2 domain.Id, arg3 domain.Id) (*domain.Movement, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
-	fake.getArgsForCall = append(fake.getArgsForCall, FakeMovementGetterGetArgs{arg1, arg2})
+	fake.getArgsForCall = append(fake.getArgsForCall, FakeMovementGetterGetArgs{arg1, arg2, arg3})
 	stub := fake.GetStub
 	fakeReturns := fake.getReturns
-	fake.recordInvocation("Get", []interface{}{arg1, arg2})
+	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3})
 	fake.getMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -54,17 +56,17 @@ func (fake *FakeMovementGetter) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeMovementGetter) GetCalls(stub func(domain.Id, domain.Id) (*domain.Movement, error)) {
+func (fake *FakeMovementGetter) GetCalls(stub func(context.Context, domain.Id, domain.Id) (*domain.Movement, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeMovementGetter) GetArgsForCall(i int) (domain.Id, domain.Id) {
+func (fake *FakeMovementGetter) GetArgsForCall(i int) (context.Context, domain.Id, domain.Id) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
 }
 
 func (fake *FakeMovementGetter) GetArgs() []FakeMovementGetterGetArgs {

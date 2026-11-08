@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,7 +10,7 @@ import (
 )
 
 type FakeAccountGetter struct {
-	GetStub        func(domain.Id) (*domain.Account, error)
+	GetStub        func(context.Context, domain.Id) (*domain.Account, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []FakeAccountGetterGetArgs
 	getReturns     struct {
@@ -27,19 +28,20 @@ type FakeAccountGetter struct {
 
 // FakeAccountGetterGetArgs holds the arguments of one call to Get.
 type FakeAccountGetterGetArgs struct {
-	Arg1 domain.Id
+	Arg1 context.Context
+	Arg2 domain.Id
 }
 
-func (fake *FakeAccountGetter) Get(arg1 domain.Id) (*domain.Account, error) {
+func (fake *FakeAccountGetter) Get(arg1 context.Context, arg2 domain.Id) (*domain.Account, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
-	fake.getArgsForCall = append(fake.getArgsForCall, FakeAccountGetterGetArgs{arg1})
+	fake.getArgsForCall = append(fake.getArgsForCall, FakeAccountGetterGetArgs{arg1, arg2})
 	stub := fake.GetStub
 	fakeReturns := fake.getReturns
-	fake.recordInvocation("Get", []interface{}{arg1})
+	fake.recordInvocation("Get", []interface{}{arg1, arg2})
 	fake.getMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -53,17 +55,17 @@ func (fake *FakeAccountGetter) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeAccountGetter) GetCalls(stub func(domain.Id) (*domain.Account, error)) {
+func (fake *FakeAccountGetter) GetCalls(stub func(context.Context, domain.Id) (*domain.Account, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeAccountGetter) GetArgsForCall(i int) domain.Id {
+func (fake *FakeAccountGetter) GetArgsForCall(i int) (context.Context, domain.Id) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
-	return argsForCall.Arg1
+	return argsForCall.Arg1, argsForCall.Arg2
 }
 
 func (fake *FakeAccountGetter) GetArgs() []FakeAccountGetterGetArgs {

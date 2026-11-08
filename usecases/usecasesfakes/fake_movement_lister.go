@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,7 +10,7 @@ import (
 )
 
 type FakeMovementLister struct {
-	ListStub        func(domain.Id) ([]domain.Movement, error)
+	ListStub        func(context.Context, domain.Id) ([]domain.Movement, error)
 	listMutex       sync.RWMutex
 	listArgsForCall []FakeMovementListerListArgs
 	listReturns     struct {
@@ -27,19 +28,20 @@ type FakeMovementLister struct {
 
 // FakeMovementListerListArgs holds the arguments of one call to List.
 type FakeMovementListerListArgs struct {
-	Arg1 domain.Id
+	Arg1 context.Context
+	Arg2 domain.Id
 }
 
-func (fake *FakeMovementLister) List(arg1 domain.Id) ([]domain.Movement, error) {
+func (fake *FakeMovementLister) List(arg1 context.Context, arg2 domain.Id) ([]domain.Movement, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
-	fake.listArgsForCall = append(fake.listArgsForCall, FakeMovementListerListArgs{arg1})
+	fake.listArgsForCall = append(fake.listArgsForCall, FakeMovementListerListArgs{arg1, arg2})
 	stub := fake.ListStub
 	fakeReturns := fake.listReturns
-	fake.recordInvocation("List", []interface{}{arg1})
+	fake.recordInvocation("List", []interface{}{arg1, arg2})
 	fake.listMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -53,17 +55,17 @@ func (fake *FakeMovementLister) ListCallCount() int {
 	return len(fake.listArgsForCall)
 }
 
-func (fake *FakeMovementLister) ListCalls(stub func(domain.Id) ([]domain.Movement, error)) {
+func (fake *FakeMovementLister) ListCalls(stub func(context.Context, domain.Id) ([]domain.Movement, error)) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = stub
 }
 
-func (fake *FakeMovementLister) ListArgsForCall(i int) domain.Id {
+func (fake *FakeMovementLister) ListArgsForCall(i int) (context.Context, domain.Id) {
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
 	argsForCall := fake.listArgsForCall[i]
-	return argsForCall.Arg1
+	return argsForCall.Arg1, argsForCall.Arg2
 }
 
 func (fake *FakeMovementLister) ListArgs() []FakeMovementListerListArgs {

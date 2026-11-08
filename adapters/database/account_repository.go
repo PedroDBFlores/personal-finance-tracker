@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -34,7 +35,7 @@ func NewAccountRepository(db *badger.DB) AccountRepository {
 	return AccountRepository{db}
 }
 
-func (r *AccountRepository) Create(account domain.Account) (*domain.Id, error) {
+func (r *AccountRepository) Create(_ context.Context, account domain.Account) (*domain.Id, error) {
 	id := domain.Id(uuid.NewV7())
 	key := accountKey(id)
 	account.Id = id
@@ -51,7 +52,7 @@ func (r *AccountRepository) Create(account domain.Account) (*domain.Id, error) {
 	return &id, nil
 }
 
-func (r *AccountRepository) Update(account domain.Account) error {
+func (r *AccountRepository) Update(_ context.Context, account domain.Account) error {
 	key := accountKey(account.Id)
 	ok, err := IsKeyPresent(r.db, key)
 	if err != nil {
@@ -72,7 +73,7 @@ func (r *AccountRepository) Update(account domain.Account) error {
 	})
 }
 
-func (r *AccountRepository) Get(id domain.Id) (*domain.Account, error) {
+func (r *AccountRepository) Get(_ context.Context, id domain.Id) (*domain.Account, error) {
 	key := accountKey(id)
 	out, err := GetByKey[account](r.db, key)
 	if err != nil {
@@ -82,7 +83,7 @@ func (r *AccountRepository) Get(id domain.Id) (*domain.Account, error) {
 	return &modelAccount, nil
 }
 
-func (r *AccountRepository) List() ([]domain.Account, error) {
+func (r *AccountRepository) List(_ context.Context) ([]domain.Account, error) {
 	accounts, err := ListAllByKey[account](r.db, []byte(accountPrefix))
 	if err != nil {
 		return []domain.Account{}, err
@@ -95,7 +96,7 @@ func (r *AccountRepository) List() ([]domain.Account, error) {
 	return modelAccounts, nil
 }
 
-func (r *AccountRepository) Delete(id domain.Id) error {
+func (r *AccountRepository) Delete(_ context.Context, id domain.Id) error {
 	key := accountKey(id)
 	ok, err := IsKeyPresent(r.db, key)
 	if err != nil {

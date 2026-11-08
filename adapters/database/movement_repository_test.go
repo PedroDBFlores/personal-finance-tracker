@@ -1,6 +1,7 @@
 package database_test
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -16,6 +17,7 @@ import (
 
 func TestMovementRepository(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	ctx := context.TODO()
 	baseAccount := domain.Account{
 		Name:      "Test Account",
 		Type:      domain.AccountTypeBank,
@@ -27,7 +29,7 @@ func TestMovementRepository(t *testing.T) {
 		db, err := getInMemoryDatabase(t, logger)
 		require.NoError(t, err)
 		accRepo := database.NewAccountRepository(db)
-		accountId, err := accRepo.Create(baseAccount)
+		accountId, err := accRepo.Create(ctx, baseAccount)
 		require.NoError(t, err)
 		repo := database.NewMovementRepository(db)
 		movement := domain.NewMovement(
@@ -36,11 +38,11 @@ func TestMovementRepository(t *testing.T) {
 			domain.MovementTypeDebit,
 			time.Now(),
 		)
-		id, err := repo.Create(*accountId, movement)
+		id, err := repo.Create(ctx, *accountId, movement)
 		require.NoError(t, err)
 		require.NotEqual(t, domain.Id{}, id)
 
-		mov, err := repo.Get(*accountId, *id)
+		mov, err := repo.Get(ctx, *accountId, *id)
 		require.NoError(t, err)
 		require.NotNil(t, mov)
 		require.Equal(t, domain.MovementTypeDebit, mov.Type)
@@ -53,7 +55,7 @@ func TestMovementRepository(t *testing.T) {
 			db, err := getInMemoryDatabase(t, logger)
 			require.NoError(t, err)
 			accRepo := database.NewAccountRepository(db)
-			accountId, err := accRepo.Create(baseAccount)
+			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
 			movement := domain.NewMovement(
@@ -62,10 +64,10 @@ func TestMovementRepository(t *testing.T) {
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
-			id, err := repo.Create(*accountId, movement)
+			id, err := repo.Create(ctx, *accountId, movement)
 			require.NoError(t, err)
 
-			mov, err := repo.Get(*accountId, *id)
+			mov, err := repo.Get(ctx, *accountId, *id)
 
 			require.NoError(t, err)
 			require.NotNil(t, mov)
@@ -82,7 +84,7 @@ func TestMovementRepository(t *testing.T) {
 
 			accountId := domain.NewId()
 			id := domain.NewId()
-			mov, err := repo.Get(accountId, id)
+			mov, err := repo.Get(ctx, accountId, id)
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Movement", fmt.Sprintf("account:%s:movement:%s", accountId, id)))
 			require.Nil(t, mov)
 		})
@@ -93,7 +95,7 @@ func TestMovementRepository(t *testing.T) {
 			db, err := getInMemoryDatabase(t, logger)
 			require.NoError(t, err)
 			accRepo := database.NewAccountRepository(db)
-			accountId, err := accRepo.Create(baseAccount)
+			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
 			movement := domain.NewMovement(
@@ -102,7 +104,7 @@ func TestMovementRepository(t *testing.T) {
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
-			id, err := repo.Create(*accountId, movement)
+			id, err := repo.Create(ctx, *accountId, movement)
 			movement.Id = *id
 			require.NoError(t, err)
 
@@ -111,10 +113,10 @@ func TestMovementRepository(t *testing.T) {
 			movement.Type = domain.MovementTypeCredit
 			movement.Date = time.Now()
 
-			err = repo.Update(*accountId, movement)
+			err = repo.Update(ctx, *accountId, movement)
 			require.NoError(t, err)
 
-			updatedMov, err := repo.Get(*accountId, *id)
+			updatedMov, err := repo.Get(ctx, *accountId, *id)
 			require.NoError(t, err)
 			require.NotNil(t, updatedMov)
 			require.Equal(t, movement.Description, updatedMov.Description)
@@ -137,7 +139,7 @@ func TestMovementRepository(t *testing.T) {
 			)
 			movement.Id = domain.NewId()
 
-			err = repo.Update(accountId, movement)
+			err = repo.Update(ctx, accountId, movement)
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Movement", fmt.Sprintf("account:%s:movement:%s", accountId, movement.Id)))
 		})
 	})
@@ -146,7 +148,7 @@ func TestMovementRepository(t *testing.T) {
 		db, err := getInMemoryDatabase(t, logger)
 		require.NoError(t, err)
 		accRepo := database.NewAccountRepository(db)
-		accountId, err := accRepo.Create(baseAccount)
+		accountId, err := accRepo.Create(ctx, baseAccount)
 		require.NoError(t, err)
 		repo := database.NewMovementRepository(db)
 		firstMovement := domain.NewMovement(
@@ -155,7 +157,7 @@ func TestMovementRepository(t *testing.T) {
 			domain.MovementTypeDebit,
 			time.Now(),
 		)
-		firstId, err := repo.Create(*accountId, firstMovement)
+		firstId, err := repo.Create(ctx, *accountId, firstMovement)
 		require.NoError(t, err)
 		firstMovement.Id = *firstId
 		secondMovement := domain.NewMovement(
@@ -164,11 +166,11 @@ func TestMovementRepository(t *testing.T) {
 			domain.MovementTypeCredit,
 			time.Now(),
 		)
-		secondId, err := repo.Create(*accountId, secondMovement)
+		secondId, err := repo.Create(ctx, *accountId, secondMovement)
 		require.NoError(t, err)
 		secondMovement.Id = *secondId
 
-		accountMovements, err := repo.List(*accountId)
+		accountMovements, err := repo.List(ctx, *accountId)
 		require.NoError(t, err)
 		require.Len(t, accountMovements, 2)
 
@@ -181,7 +183,7 @@ func TestMovementRepository(t *testing.T) {
 			db, err := getInMemoryDatabase(t, logger)
 			require.NoError(t, err)
 			accRepo := database.NewAccountRepository(db)
-			accountId, err := accRepo.Create(baseAccount)
+			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
 			movement := domain.NewMovement(
@@ -190,13 +192,13 @@ func TestMovementRepository(t *testing.T) {
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
-			id, err := repo.Create(*accountId, movement)
+			id, err := repo.Create(ctx, *accountId, movement)
 			require.NoError(t, err)
 
-			err = repo.Delete(*accountId, *id)
+			err = repo.Delete(ctx, *accountId, *id)
 			require.NoError(t, err)
 
-			mov, err := repo.Get(*accountId, *id)
+			mov, err := repo.Get(ctx, *accountId, *id)
 			require.Error(t, err)
 			require.Nil(t, mov)
 		})
@@ -208,7 +210,7 @@ func TestMovementRepository(t *testing.T) {
 
 			accountId := domain.NewId()
 			id := domain.NewId()
-			err = repo.Delete(accountId, id)
+			err = repo.Delete(ctx, accountId, id)
 
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", accountId)))
 		})
@@ -217,12 +219,12 @@ func TestMovementRepository(t *testing.T) {
 			db, err := getInMemoryDatabase(t, logger)
 			require.NoError(t, err)
 			accRepo := database.NewAccountRepository(db)
-			accountId, err := accRepo.Create(baseAccount)
+			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
 
 			id := domain.NewId()
-			err = repo.Delete(*accountId, id)
+			err = repo.Delete(ctx, *accountId, id)
 
 			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Movement", fmt.Sprintf("account:%s:movement:%s", accountId, id)))
 

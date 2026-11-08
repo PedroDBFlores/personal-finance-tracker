@@ -1,30 +1,32 @@
 package usecases
 
 import (
+	"context"
+
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 )
 
 //counterfeiter:generate . MovementCreator
 type MovementCreator interface {
-	Create(accountId domain.Id, movement domain.Movement) (domain.Id, error)
+	Create(ctx context.Context, accountId domain.Id, movement domain.Movement) (*domain.Id, error)
 }
 
 //counterfeiter:generate . MovementUpdater
 type MovementUpdater interface {
-	Update(accountId domain.Id, movement domain.Movement) error
+	Update(ctx context.Context, accountId domain.Id, movement domain.Movement) error
 }
 
 //counterfeiter:generate . MovementGetter
 type MovementGetter interface {
-	Get(accountId, id domain.Id) (*domain.Movement, error)
+	Get(ctx context.Context, accountId, id domain.Id) (*domain.Movement, error)
 }
 
 //counterfeiter:generate . MovementLister
 type MovementLister interface {
-	List(accountId domain.Id) ([]domain.Movement, error)
+	List(ctx context.Context, accountId domain.Id) ([]domain.Movement, error)
 }
 
 //counterfeiter:generate . MovementDeleter
 type MovementDeleter interface {
-	Delete(accountId, id domain.Id) error
+	Delete(ctx context.Context, accountId, id domain.Id) error
 }

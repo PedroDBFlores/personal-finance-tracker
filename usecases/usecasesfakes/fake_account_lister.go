@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,9 +10,9 @@ import (
 )
 
 type FakeAccountLister struct {
-	ListStub        func() ([]domain.Account, error)
+	ListStub        func(context.Context) ([]domain.Account, error)
 	listMutex       sync.RWMutex
-	listArgsForCall []struct{}
+	listArgsForCall []FakeAccountListerListArgs
 	listReturns     struct {
 		result1 []domain.Account
 		result2 error
@@ -25,16 +26,21 @@ type FakeAccountLister struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeAccountLister) List() ([]domain.Account, error) {
+// FakeAccountListerListArgs holds the arguments of one call to List.
+type FakeAccountListerListArgs struct {
+	Arg1 context.Context
+}
+
+func (fake *FakeAccountLister) List(arg1 context.Context) ([]domain.Account, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
-	fake.listArgsForCall = append(fake.listArgsForCall, struct{}{})
+	fake.listArgsForCall = append(fake.listArgsForCall, FakeAccountListerListArgs{arg1})
 	stub := fake.ListStub
 	fakeReturns := fake.listReturns
-	fake.recordInvocation("List", []interface{}{})
+	fake.recordInvocation("List", []interface{}{arg1})
 	fake.listMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -48,10 +54,25 @@ func (fake *FakeAccountLister) ListCallCount() int {
 	return len(fake.listArgsForCall)
 }
 
-func (fake *FakeAccountLister) ListCalls(stub func() ([]domain.Account, error)) {
+func (fake *FakeAccountLister) ListCalls(stub func(context.Context) ([]domain.Account, error)) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = stub
+}
+
+func (fake *FakeAccountLister) ListArgsForCall(i int) context.Context {
+	fake.listMutex.RLock()
+	defer fake.listMutex.RUnlock()
+	argsForCall := fake.listArgsForCall[i]
+	return argsForCall.Arg1
+}
+
+func (fake *FakeAccountLister) ListArgs() []FakeAccountListerListArgs {
+	fake.listMutex.RLock()
+	defer fake.listMutex.RUnlock()
+	args := make([]FakeAccountListerListArgs, len(fake.listArgsForCall))
+	copy(args, fake.listArgsForCall)
+	return args
 }
 
 func (fake *FakeAccountLister) ListReturns(result1 []domain.Account, result2 error) {

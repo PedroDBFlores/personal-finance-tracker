@@ -2,6 +2,7 @@
 package usecasesfakes
 
 import (
+	"context"
 	"sync"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -9,7 +10,7 @@ import (
 )
 
 type FakeAccountDeleter struct {
-	DeleteStub        func(domain.Id) error
+	DeleteStub        func(context.Context, domain.Id) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []FakeAccountDeleterDeleteArgs
 	deleteReturns     struct {
@@ -25,19 +26,20 @@ type FakeAccountDeleter struct {
 
 // FakeAccountDeleterDeleteArgs holds the arguments of one call to Delete.
 type FakeAccountDeleterDeleteArgs struct {
-	Arg1 domain.Id
+	Arg1 context.Context
+	Arg2 domain.Id
 }
 
-func (fake *FakeAccountDeleter) Delete(arg1 domain.Id) error {
+func (fake *FakeAccountDeleter) Delete(arg1 context.Context, arg2 domain.Id) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
-	fake.deleteArgsForCall = append(fake.deleteArgsForCall, FakeAccountDeleterDeleteArgs{arg1})
+	fake.deleteArgsForCall = append(fake.deleteArgsForCall, FakeAccountDeleterDeleteArgs{arg1, arg2})
 	stub := fake.DeleteStub
 	fakeReturns := fake.deleteReturns
-	fake.recordInvocation("Delete", []interface{}{arg1})
+	fake.recordInvocation("Delete", []interface{}{arg1, arg2})
 	fake.deleteMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -51,17 +53,17 @@ func (fake *FakeAccountDeleter) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeAccountDeleter) DeleteCalls(stub func(domain.Id) error) {
+func (fake *FakeAccountDeleter) DeleteCalls(stub func(context.Context, domain.Id) error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
 }
 
-func (fake *FakeAccountDeleter) DeleteArgsForCall(i int) domain.Id {
+func (fake *FakeAccountDeleter) DeleteArgsForCall(i int) (context.Context, domain.Id) {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	argsForCall := fake.deleteArgsForCall[i]
-	return argsForCall.Arg1
+	return argsForCall.Arg1, argsForCall.Arg2
 }
 
 func (fake *FakeAccountDeleter) DeleteArgs() []FakeAccountDeleterDeleteArgs {
