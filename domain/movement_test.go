@@ -6,12 +6,17 @@ import (
 )
 
 func TestNewMovement(t *testing.T) {
+	accountId := NewId()
 	description := "Test Movement"
 	value := Money(10000)
 	movementType := MovementTypeCredit
 	date := time.Now()
 
-	movement := NewMovement(description, value, movementType, date)
+	movement := NewMovement(accountId, description, value, movementType, date)
+
+	if movement.AccountId != accountId {
+		t.Errorf("Expected AccountId %s, got %s", accountId.String(), movement.AccountId.String())
+	}
 
 	if movement.Description != description {
 		t.Errorf("Expected Description %s, got %s", description, movement.Description)
@@ -29,12 +34,14 @@ func TestNewMovement(t *testing.T) {
 
 func TestMovementDefaults(t *testing.T) {
 	id := NewId()
+	accountId := NewId()
 	description := "Test Movement"
 	value := Money(0)
 	movementType := MovementTypeDebit
 	date := time.Time{}
 
 	movement := Movement{
+		AccountId:   accountId,
 		Id:          id,
 		Description: description,
 		Value:       value,

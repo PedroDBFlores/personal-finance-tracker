@@ -3,11 +3,10 @@ package domain
 import (
 	"testing"
 	"time"
-	"uuid"
 )
 
 func TestNewAccount(t *testing.T) {
-	id := Id(uuid.New())
+	id := Id(1)
 	name := "Test Account"
 	accountType := AccountTypeBank
 	currency := ParseCurrency("USD")

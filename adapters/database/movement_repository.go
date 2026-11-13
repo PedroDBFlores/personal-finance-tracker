@@ -2,134 +2,85 @@ package database
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"time"
 
-	"github.com/dgraph-io/badger/v4"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
+	"gorm.io/gorm"
 )
 
-type movement struct {
-	Id           domain.Id           `json:"id"`
-	Description  string              `json:"description"`
-	Value        domain.Money        `json:"value"`
-	MovementType domain.MovementType `json:"type"`
-	Date         time.Time           `json:"date"`
-}
-
-const movementKeyPrefix = "account:%s:movement"
-
-func movementKey(accountId, movementId domain.Id) []byte {
-	return fmt.Appendf(nil, movementKeyPrefix+":%s", accountId, movementId)
-}
-
 type MovementRepository struct {
-	db *badger.DB
+	db *gorm.DB
 }
 
-func NewMovementRepository(db *badger.DB) MovementRepository {
+func NewMovementRepository(db *gorm.DB) MovementRepository {
 	return MovementRepository{db: db}
 }
 
-func (r *MovementRepository) Create(_ context.Context, accountId domain.Id, movement domain.Movement) (*domain.Id, error) {
-	id := domain.NewId()
-	key := movementKey(accountId, id)
-	movement.Id = id
-	b, err := json.Marshal(domainToMovement(movement))
-	if err != nil {
+func (r *MovementRepository) Create(ctx context.Context, movement domain.Movement) (*domain.Id, error) {
+	mov := domainMovementToDBMovement(movement)
+	if err := gorm.G[Movement](r.db).Create(ctx, &mov); err != nil {
 		return nil, err
 	}
-	if err := r.db.Update(func(txn *badger.Txn) error {
-		return txn.Set(key, b)
-	}); err != nil {
-		return nil, err
-	}
-
+	id := domain.Id(mov.ID)
 	return &id, nil
 }
 
-func (r *MovementRepository) Update(_ context.Context, accountId domain.Id, movement domain.Movement) error {
-	key := movementKey(accountId, movement.Id)
-	ok, err := IsKeyPresent(r.db, key)
-	if err != nil {
+func (r *MovementRepository) Update(ctx context.Context, movement domain.Movement) error {
+	if rowsAffected, err := gorm.G[Movement](r.db).Updates(ctx, domainMovementToDBMovement(movement)); rowsAffected == 0 {
+		return app_errors.NewResourceNotFoundError("Movement", movement.Id.String())
+	} else if err != nil {
 		return err
 	}
-	if !ok {
-		return app_errors.NewResourceNotFoundError("Movement", string(key))
-	}
-	return r.db.Update(func(txn *badger.Txn) error {
-		if _, err := txn.Get(key); err != nil {
-			return err
-		}
-		b, err := json.Marshal(domainToMovement(movement))
-		if err != nil {
-			return err
-		}
-		return txn.Set(key, b)
-	})
+	return nil
 }
 
-func (r *MovementRepository) Get(_ context.Context, accountId, id domain.Id) (*domain.Movement, error) {
-	key := movementKey(accountId, id)
-	out, err := GetByKey[movement](r.db, key)
-	if err != nil {
-		return nil, err
+func (r *MovementRepository) Get(ctx context.Context, id domain.Id) (*domain.Movement, error) {
+	if acc, err := gorm.G[Movement](r.db).Where("id = ?", id).First(ctx); err != nil {
+		return nil, app_errors.NewResourceNotFoundError("Movement", id.String())
+	} else {
+		account := dbMovementToDomainMovement(acc)
+		return &account, nil
 	}
-	modelMovement := movementToDomain(out)
-	return &modelMovement, nil
 }
 
-func (r *MovementRepository) List(_ context.Context, accountId domain.Id) ([]domain.Movement, error) {
-	movements, err := ListAllByKey[movement](r.db, fmt.Appendf(nil, movementKeyPrefix, accountId))
+func (r *MovementRepository) List(ctx context.Context, accountId domain.Id) ([]domain.Movement, error) {
+	movements, err := gorm.G[Movement](r.db).Where("account_id = ?", accountId).Find(ctx)
 	if err != nil {
 		return []domain.Movement{}, err
 	}
 	var modelMovements []domain.Movement
 	for _, movements := range movements {
-		modelMovements = append(modelMovements, movementToDomain(movements))
+		modelMovements = append(modelMovements, dbMovementToDomainMovement(movements))
 	}
 
 	return modelMovements, nil
 }
 
-func (r *MovementRepository) Delete(_ context.Context, accountId, id domain.Id) error {
-	accKey := accountKey(accountId)
-	ok, err := IsKeyPresent(r.db, accKey)
-	if err != nil {
+func (r *MovementRepository) Delete(ctx context.Context, id domain.Id) error {
+	if rowsAffected, err := gorm.G[Movement](r.db).Where("id = ?", id).Delete(ctx); err != nil {
 		return err
+	} else if rowsAffected == 0 {
+		return app_errors.NewResourceNotFoundError("Movement", id.String())
 	}
-	if !ok {
-		return app_errors.NewResourceNotFoundError("Account", string(accKey))
-	}
-	key := movementKey(accountId, id)
-	ok, err = IsKeyPresent(r.db, key)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return app_errors.NewResourceNotFoundError("Movement", string(key))
-	}
-	return r.db.Update(func(txn *badger.Txn) error {
-		return txn.Delete(key)
-	})
+	return nil
 }
 
-func movementToDomain(m movement) domain.Movement {
+func dbMovementToDomainMovement(m Movement) domain.Movement {
 	d := domain.NewMovement(
+		domain.Id(m.AccountId),
 		m.Description,
 		m.Value,
 		m.MovementType,
 		m.Date,
 	)
-	d.Id = m.Id
+	d.Id = domain.Id(m.ID)
 	return d
 }
 
-func domainToMovement(m domain.Movement) movement {
-	return movement{
-		Id:           m.Id,
+func domainMovementToDBMovement(m domain.Movement) Movement {
+	return Movement{
+		ID:           uint(m.Id),
+		AccountId:    uint(m.AccountId),
 		Description:  m.Description,
 		Value:        m.Value,
 		MovementType: m.Type,

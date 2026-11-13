@@ -2,12 +2,10 @@ package database_test
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"testing"
 	"time"
-	"uuid"
 
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/database"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
@@ -32,7 +30,7 @@ func TestAccountRepository(t *testing.T) {
 
 		id, err := repo.Create(ctx, account)
 		require.NoError(t, err)
-		require.NotEqual(t, domain.Id{}, id)
+		require.Greater(t, *id, uint(0))
 
 		acc, err := repo.Get(ctx, *id)
 		require.NoError(t, err)
@@ -58,7 +56,7 @@ func TestAccountRepository(t *testing.T) {
 			}
 			id, err := repo.Create(ctx, account)
 			require.NoError(t, err)
-			require.NotEqual(t, domain.Id{}, id)
+			require.Greater(t, *id, uint(0))
 
 			acc, err := repo.Get(ctx, *id)
 
@@ -77,7 +75,7 @@ func TestAccountRepository(t *testing.T) {
 
 			id := domain.NewId()
 			acc, err := repo.Get(ctx, id)
-			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", id)))
+			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", id.String()))
 			require.Nil(t, acc)
 		})
 	})
@@ -97,7 +95,7 @@ func TestAccountRepository(t *testing.T) {
 
 			id, err := repo.Create(ctx, account)
 			require.NoError(t, err)
-			require.NotEqual(t, domain.Id(uuid.Nil()), id)
+			require.NotEqual(t, domain.Id(0), id)
 
 			acc, err := repo.Get(ctx, *id)
 			require.NoError(t, err)
@@ -116,14 +114,14 @@ func TestAccountRepository(t *testing.T) {
 			repo := database.NewAccountRepository(db)
 
 			account := domain.Account{
-				Id:        domain.Id(uuid.NewV7()),
+				Id:        domain.NewId(),
 				Name:      "Non-existent Bank",
 				Type:      domain.AccountTypeBank,
 				Currency:  domain.CurrencyEUR,
 				CreatedAt: time.Now(),
 			}
 			err = repo.Update(ctx, account)
-			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", account.Id)))
+			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", account.Id.String()))
 		})
 	})
 
@@ -193,7 +191,7 @@ func TestAccountRepository(t *testing.T) {
 			id := domain.NewId()
 			err = repo.Delete(ctx, id)
 
-			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", fmt.Sprintf("account:%s", id)))
+			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", id.String()))
 		})
 	})
 }
