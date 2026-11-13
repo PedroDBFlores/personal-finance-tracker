@@ -2,17 +2,18 @@ package domain
 
 import (
 	"fmt"
-	"uuid"
+	"math/rand/v2"
+	"strconv"
 )
 
-type Id uuid.UUID
+type Id uint
 
 func (i Id) String() string {
-	return uuid.UUID(i).String()
+	return strconv.FormatUint(uint64(i), 10)
 }
 
 func NewId() Id {
-	return Id(uuid.NewV7())
+	return Id(rand.Uint())
 }
 
 type Currency string

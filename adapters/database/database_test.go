@@ -4,15 +4,19 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/dgraph-io/badger/v4"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/database"
-	"github.com/pedrodbflores/personal-finance-tracker/adapters/database/logger"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-func getInMemoryDatabase(t *testing.T, _logger *slog.Logger) (*badger.DB, error) {
+func getInMemoryDatabase(t *testing.T, _logger *slog.Logger) (*gorm.DB, error) {
 	t.Helper()
-	opts := badger.DefaultOptions("").
-		WithInMemory(true).
-		WithLogger(logger.NewBadgerSlog(_logger))
-	return database.GetDatabase(&opts)
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		// Logger: _logger,
+	})
+	if err != nil {
+		panic("failed to connect database")
+	}
+	db.AutoMigrate(&database.Account{}, &database.Movement{})
+	return db, err
 }
