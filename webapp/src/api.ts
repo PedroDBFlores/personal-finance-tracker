@@ -62,6 +62,10 @@ export function listAccounts(): Promise<Account[]> {
   return request<Account[]>("/accounts");
 }
 
+export function getAccount(id: string): Promise<Account> {
+  return request<Account>(`/accounts/${id}`);
+}
+
 export function createAccount(input: CreateAccountInput): Promise<Account> {
   return request<Account>("/accounts", {
     method: "POST",

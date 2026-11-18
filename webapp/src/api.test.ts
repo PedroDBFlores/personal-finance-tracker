@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   listAccounts,
+  getAccount,
   createAccount,
   updateAccount,
   deleteAccount,
@@ -34,6 +35,16 @@ describe("api client", () => {
 
     expect(result).toEqual(accounts);
     expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts`, expect.anything());
+  });
+
+  it("gets a single account", async () => {
+    const account = { id: "1", name: "Bank A", type: "Bank", currency: "EUR", created_at: "2024-01-02T03:04:05Z" };
+    const fetchMock = mockFetchOnce(200, account);
+
+    const result = await getAccount("1");
+
+    expect(result).toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts/1`, expect.anything());
   });
 
   it("creates an account with a JSON body", async () => {

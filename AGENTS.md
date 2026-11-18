@@ -4,7 +4,7 @@ Personal finance tracker, tracked as **two projects** in this repo:
 
 ```
 api/                 Go REST API (Clean Architecture, SQLite via GORM, chi router)
-webapp/              React webapp (to be created) — consumes the api over HTTP
+webapp/              React webapp — consumes the api over HTTP
 ```
 
 - `api/` is a self-contained Go module (`api/go.mod`). All Go commands run from `api/`.
@@ -20,10 +20,25 @@ webapp/              React webapp (to be created) — consumes the api over HTTP
 
 ```
 webapp/src/api.ts        typed API client (fetch wrapper, ApiError with status, base URL from VITE_API_URL)
-webapp/src/App.tsx      accounts list + create form + movements panel per selected account
+webapp/src/App.tsx      AppRoutes (the <Routes> table) + default App (BrowserRouter + layout)
+webapp/src/pages/        one page component per route (AccountsPage, NewAccountPage, AccountDetailPage, NewMovementPage)
+webapp/src/components/RouterLink.tsx  chakra(Link) wrapper: router links with Chakra style props
+webapp/src/components/ui/provider.tsx  ChakraProvider wrapper (defaultSystem)
 webapp/src/*.test.ts(x)  vitest tests (jsdom); api client tests mock fetch, component tests mock ./api
 ```
 
+- **Routing: react-router v8.** `App.tsx` exports `AppRoutes` (the `<Routes>` table) so tests
+  can render it inside a `MemoryRouter`; the default `App` wraps it in `BrowserRouter`.
+  Routes: `/` accounts list, `/accounts/new` create account, `/accounts/:id` account detail
+  with movements, `/accounts/:id/movements/new` create movement. Navigate with
+  `useNavigate`/`<RouterLink to=...>`; page params via `useParams`.
+- **UI kit: Chakra UI v3** (`@chakra-ui/react` + `@emotion/react`). Wrap the app in
+  `Provider` (`src/components/ui/provider.tsx`) in `main.tsx`; use Chakra components
+  (Container, Card, Button, Field, Input, NativeSelect, Badge, ...) with colorPalette /
+  variant props for styling. Component tests must render inside `<Provider>` too.
+  For router navigation use `RouterLink` (`src/components/RouterLink.tsx`, built with
+  `chakra(Link)`) — do NOT use `Button as={Link}`: Chakra's `as` prop does not merge the
+  router's props in TypeScript and leaks `to` onto the DOM element.
 - Tests: `pnpm test` (vitest run), `pnpm test:watch`. TDD applies here too: failing test first.
 - Component tests mock the `./api` module with `vi.mock` and assert on the mocked functions;
   API client tests stub `fetch` with `vi.stubGlobal`.
