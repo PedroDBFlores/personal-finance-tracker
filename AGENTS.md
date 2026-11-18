@@ -2,7 +2,7 @@
 
 CLI app in Go for tracking personal finances: accounts, movements, investments and
 investment transactions. Data is persisted in SQLite (via GORM). The UI is a terminal
-UI built with Bubble Tea v2 (`cmd/main.go` is still the upstream example scaffold).
+UI built with Bubble Tea v2 (`cmd/main.go` is the composition root and TUI entrypoint).
 
 ## Architecture
 
@@ -11,7 +11,7 @@ Clean Architecture (hexagonal). Dependencies point inward only:
 the rest of the project.
 
 ```
-cmd/                 entrypoint, Bubble Tea v2 TUI (scaffold for now)
+cmd/                 composition root + Bubble Tea v2 TUI
 adapters/database/   SQLite persistence: GORM models + repositories implementing usecase ports
 usecases/            ports (interfaces) at package root, implementations in usecases/<entity>/,
                      generated fakes in usecases/usecasesfakes/
@@ -61,6 +61,19 @@ app_errors/          shared error types (e.g. ResourceNotFoundError)
   `app_errors.NewResourceNotFoundError("<Entity>", id.String())` (check the error from
   `First` or rows affected == 0).
 
+### cmd/ (TUI)
+
+- `main.go` is the composition root: it opens the SQLite database (GORM + `AutoMigrate`),
+  builds the repositories and usecases, and injects them into the Bubble Tea model.
+  No business logic lives here — `cmd` only wires and renders.
+- Bubble Tea v2 models implement `Init() tea.Cmd`, `Update(tea.Msg) (tea.Model, tea.Cmd)`
+  and `View() tea.View`.
+- Usecases hit the database, so never call them synchronously inside `Update`. Wrap the call
+  in a `tea.Cmd` that returns a result message (e.g. `accountsLoadedMsg{accs}` or `errMsg{err}`),
+  and apply that message to the model state in `Update`.
+- One model per screen; pass the usecases a screen needs through its constructor and pass
+  navigation data (e.g. an account id) via messages.
+
 ### dtos/ and app_errors/
 
 - DTOs are plain structs with `NewXxxDto(...)` constructors; read DTOs like
@@ -102,5 +115,8 @@ go generate ./...   # regenerate counterfeiter fakes after changing ports
 
 - Schema changes happen in `adapters/database/models.go` (AutoMigrate). `SCHEMA.md` still
   describes the old Badger KV layout — update it when the schema changes.
-- `github.com/dgraph-io/badger` in go.mod is legacy (pre-SQLite); do not use it in new code.
+- `github.com/dgraph-io/badger` in go.mod and `adapters/database/connector.go` are legacy
+  (pre-SQLite); the composition root in `cmd` opens SQLite directly via
+  `gorm.Open(sqlite.Open("<file>"), ...)` + `AutoMigrate` (same pattern as
+  `getInMemoryDatabase` in the repository tests). Do not use Badger in new code.
 - Git: work on `main`, short imperative commit messages.
