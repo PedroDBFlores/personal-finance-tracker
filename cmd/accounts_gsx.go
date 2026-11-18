@@ -17,14 +17,16 @@ type accountLister interface {
 
 type accountsScreen struct {
 	lister   accountLister
+	creator  accountCreator
 	accounts *tui.State[[]dtos.AccountDto]
 	err      *tui.State[error]
 	loading  *tui.State[bool]
 }
 
-func newAccountsScreen(lister accountLister) *accountsScreen {
+func newAccountsScreen(lister accountLister, creator accountCreator) *accountsScreen {
 	return &accountsScreen{
 		lister:   lister,
+		creator:  creator,
 		accounts: tui.NewState([]dtos.AccountDto{}),
 		err:      tui.NewState[error](nil),
 		loading:  tui.NewState(true),
@@ -53,6 +55,14 @@ func (s *accountsScreen) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnStop(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { s.load(ke.App().EventQueue()) }),
+		tui.On(tui.Rune('c'), func(ke tui.KeyEvent) {
+			app := ke.App()
+			form := newAccountFormScreen(s.creator, func() {
+				app.SetRootComponent(s)
+				s.load(app.EventQueue())
+			})
+			app.SetRootComponent(form)
+		}),
 	}
 }
 
@@ -104,7 +114,7 @@ func (s *accountsScreen) Render(app *tui.App) *tui.Element {
 	)
 	__tui_0.AddChild(__tui_7)
 	__tui_8 := tui.New(
-		tui.WithText("r reload, q quit"),
+		tui.WithText("c new account, r reload, q quit"),
 		tui.WithTextStyle(tui.NewStyle().Dim()),
 	)
 	__tui_0.AddChild(__tui_8)
@@ -121,6 +131,7 @@ func (s *accountsScreen) updatePropsFields(fresh tui.Component) {
 		return
 	}
 	s.lister = f.lister
+	s.creator = f.creator
 }
 
 func (s *accountsScreen) UpdateProps(fresh tui.Component) {

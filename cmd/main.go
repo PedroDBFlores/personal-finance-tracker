@@ -26,8 +26,9 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	accountRepo := database.NewAccountRepository(db)
 	listAccounts := account.NewListAccountsUseCase(&accountRepo, logger)
+	createAccount := account.NewCreateAccountUseCase(&accountRepo, logger)
 
-	screen := newAccountsScreen(&listAccounts)
+	screen := newAccountsScreen(&listAccounts, &createAccount)
 	app, err := tui.NewApp(tui.WithRootComponent(screen))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create app: %v\n", err)

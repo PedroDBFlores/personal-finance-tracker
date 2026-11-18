@@ -78,6 +78,8 @@ app_errors/          shared error types (e.g. ResourceNotFoundError)
   event loop.
 - App lifecycle in `main.go`: `app, err := tui.NewApp(tui.WithRootComponent(screen))`,
   `defer app.Close()`, `app.Run()`. Quit keys call `ke.App().Stop()`.
+- Navigation between screens: `app.SetRootComponent(other)` from a key handler; pass an
+  `onDone` callback to the child screen so it can switch back (and reload) when finished.
 - Screen tests (package `main`) exercise components without a terminal: call the `KeyMap()`
   bindings directly with `tui.KeyEvent{Key: tui.KeyRune, Rune: 'r'}` and assert on
   `state.Get()`.

@@ -18,14 +18,16 @@ type accountLister interface {
 // accountsScreen is the account list screen component.
 type accountsScreen struct {
 	lister   accountLister
+	creator  accountCreator
 	accounts *tui.State[[]dtos.AccountDto]
 	err      *tui.State[error]
 	loading  *tui.State[bool]
 }
 
-func newAccountsScreen(lister accountLister) *accountsScreen {
+func newAccountsScreen(lister accountLister, creator accountCreator) *accountsScreen {
 	return &accountsScreen{
 		lister:   lister,
+		creator:  creator,
 		accounts: tui.NewState([]dtos.AccountDto{}),
 		err:      tui.NewState[error](nil),
 		loading:  tui.NewState(true),
@@ -56,6 +58,14 @@ func (s *accountsScreen) KeyMap() tui.KeyMap {
 	return tui.KeyMap{
 		tui.OnStop(tui.Rune('q'), func(ke tui.KeyEvent) { ke.App().Stop() }),
 		tui.On(tui.Rune('r'), func(ke tui.KeyEvent) { s.load(ke.App().EventQueue()) }),
+		tui.On(tui.Rune('c'), func(ke tui.KeyEvent) {
+			app := ke.App()
+			form := newAccountFormScreen(s.creator, func() {
+				app.SetRootComponent(s)
+				s.load(app.EventQueue())
+			})
+			app.SetRootComponent(form)
+		}),
 	}
 }
 
@@ -75,6 +85,6 @@ templ (s *accountsScreen) Render() {
 			}
 		}
 		<br />
-		<span class="font-dim">r reload, q quit</span>
+		<span class="font-dim">c new account, r reload, q quit</span>
 	</div>
 }

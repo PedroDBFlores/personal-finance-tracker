@@ -31,7 +31,7 @@ func sampleAccounts() []dtos.AccountDto {
 func TestAccountsScreenLoad(t *testing.T) {
 	t.Run("applies loaded accounts to state", func(t *testing.T) {
 		accounts := sampleAccounts()
-		s := newAccountsScreen(&fakeAccountLister{accounts: accounts})
+		s := newAccountsScreen(&fakeAccountLister{accounts: accounts}, &fakeAccountCreator{})
 		queue := make(chan func(), 1)
 
 		s.load(queue)
@@ -44,7 +44,7 @@ func TestAccountsScreenLoad(t *testing.T) {
 	})
 
 	t.Run("applies load errors to state", func(t *testing.T) {
-		s := newAccountsScreen(&fakeAccountLister{err: errors.New("db down")})
+		s := newAccountsScreen(&fakeAccountLister{err: errors.New("db down")}, &fakeAccountCreator{})
 		queue := make(chan func(), 1)
 
 		s.load(queue)
@@ -56,7 +56,7 @@ func TestAccountsScreenLoad(t *testing.T) {
 }
 
 func TestAccountsScreenKeyMap(t *testing.T) {
-	s := newAccountsScreen(&fakeAccountLister{})
+	s := newAccountsScreen(&fakeAccountLister{}, &fakeAccountCreator{})
 	km := s.KeyMap()
 
 	assertBound := func(key tui.KeyEvent) {
