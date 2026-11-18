@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func ptr[T any](v T) *T { return &v }
+
 func TestAccountRepository(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
@@ -81,7 +83,7 @@ func TestAccountRepository(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		t.Run("it updates an account", func(t *testing.T) {
+		t.Run("it updates the given fields of an account", func(t *testing.T) {
 			db, err := getInMemoryDatabase(t, logger)
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
@@ -97,15 +99,16 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			require.NotEqual(t, domain.Id(0), id)
 
-			acc, err := repo.Get(ctx, *id)
-			require.NoError(t, err)
-			acc.Name = "Right Bank"
-			err = repo.Update(ctx, *acc)
+			err = repo.Update(ctx, *id, domain.AccountPatch{
+				Name: ptr("Right Bank"),
+			})
 			require.NoError(t, err)
 
 			updatedAcc, err := repo.Get(ctx, *id)
 			require.NoError(t, err)
 			require.Equal(t, "Right Bank", updatedAcc.Name)
+			require.Equal(t, domain.AccountTypeBank, updatedAcc.Type)
+			require.Equal(t, domain.CurrencyEUR, updatedAcc.Currency)
 		})
 
 		t.Run("returns ResourceNotFoundError if updating a non-existent account", func(t *testing.T) {
@@ -113,15 +116,10 @@ func TestAccountRepository(t *testing.T) {
 			require.NoError(t, err)
 			repo := database.NewAccountRepository(db)
 
-			account := domain.Account{
-				Id:        domain.NewId(),
-				Name:      "Non-existent Bank",
-				Type:      domain.AccountTypeBank,
-				Currency:  domain.CurrencyEUR,
-				CreatedAt: time.Now(),
-			}
-			err = repo.Update(ctx, account)
-			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", account.Id.String()))
+			err = repo.Update(ctx, domain.Id(999), domain.AccountPatch{
+				Name: ptr("New Name"),
+			})
+			require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Account", "999"))
 		})
 	})
 

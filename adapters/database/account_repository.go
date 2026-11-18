@@ -4,9 +4,10 @@ import (
 	"context"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
-	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
+	"gorm.io/gorm"
 )
 
 type AccountRepository struct {
@@ -26,11 +27,27 @@ func (r *AccountRepository) Create(ctx context.Context, account domain.Account) 
 	return &id, nil
 }
 
-func (r *AccountRepository) Update(ctx context.Context, account domain.Account) error {
-	if rowsAffected, err := gorm.G[Account](r.db).Updates(ctx, domainAccountToDBAccount(account)); rowsAffected == 0 {
-		return app_errors.NewResourceNotFoundError("Account", account.Id.String())
-	} else if err != nil {
+func (r *AccountRepository) Update(ctx context.Context, id domain.Id, update domain.AccountPatch) error {
+	assignments := map[string]interface{}{}
+	if update.Name != nil {
+		assignments["name"] = *update.Name
+	}
+	if update.Type != nil {
+		assignments["type"] = *update.Type
+	}
+	if update.Currency != nil {
+		assignments["currency"] = *update.Currency
+	}
+	if update.CreatedAt != nil {
+		assignments["created_at"] = *update.CreatedAt
+	}
+	if len(assignments) == 0 {
+		return nil
+	}
+	if rowsAffected, err := gorm.G[Account](r.db).Where("id = ?", id).Set(clause.Assignments(assignments)).Update(ctx); err != nil {
 		return err
+	} else if rowsAffected == 0 {
+		return app_errors.NewResourceNotFoundError("Account", id.String())
 	}
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
-	"github.com/pedrodbflores/personal-finance-tracker/dtos"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
 
@@ -18,14 +17,7 @@ func NewUpdateAccountUseCase(updater usecases.AccountUpdater, logger *slog.Logge
 	return UpdateAccountUseCase{updater, logger}
 }
 
-func (u *UpdateAccountUseCase) Execute(ctx context.Context, dto dtos.UpdateAccountDto) error {
-	account := domain.Account{
-		Id:        dto.Id,
-		Name:      dto.Name,
-		Type:      domain.AccountType(dto.Type),
-		Currency:  dto.Currency,
-		CreatedAt: dto.CreatedAt,
-	}
-	u.logger.DebugContext(ctx, "calling account updater", slog.Any("account", account))
-	return u.updater.Update(ctx, account)
+func (u *UpdateAccountUseCase) Execute(ctx context.Context, id domain.Id, update domain.AccountPatch) error {
+	u.logger.DebugContext(ctx, "updating account", slog.Any("id", id), slog.Any("update", update))
+	return u.updater.Update(ctx, id, update)
 }

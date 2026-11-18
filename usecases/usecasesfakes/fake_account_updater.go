@@ -10,7 +10,7 @@ import (
 )
 
 type FakeAccountUpdater struct {
-	UpdateStub        func(context.Context, domain.Account) error
+	UpdateStub        func(context.Context, domain.Id, domain.AccountPatch) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []FakeAccountUpdaterUpdateArgs
 	updateReturns     struct {
@@ -27,19 +27,20 @@ type FakeAccountUpdater struct {
 // FakeAccountUpdaterUpdateArgs holds the arguments of one call to Update.
 type FakeAccountUpdaterUpdateArgs struct {
 	Arg1 context.Context
-	Arg2 domain.Account
+	Arg2 domain.Id
+	Arg3 domain.AccountPatch
 }
 
-func (fake *FakeAccountUpdater) Update(arg1 context.Context, arg2 domain.Account) error {
+func (fake *FakeAccountUpdater) Update(arg1 context.Context, arg2 domain.Id, arg3 domain.AccountPatch) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
-	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeAccountUpdaterUpdateArgs{arg1, arg2})
+	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeAccountUpdaterUpdateArgs{arg1, arg2, arg3})
 	stub := fake.UpdateStub
 	fakeReturns := fake.updateReturns
-	fake.recordInvocation("Update", []interface{}{arg1, arg2})
+	fake.recordInvocation("Update", []interface{}{arg1, arg2, arg3})
 	fake.updateMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -53,17 +54,17 @@ func (fake *FakeAccountUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeAccountUpdater) UpdateCalls(stub func(context.Context, domain.Account) error) {
+func (fake *FakeAccountUpdater) UpdateCalls(stub func(context.Context, domain.Id, domain.AccountPatch) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeAccountUpdater) UpdateArgsForCall(i int) (context.Context, domain.Account) {
+func (fake *FakeAccountUpdater) UpdateArgsForCall(i int) (context.Context, domain.Id, domain.AccountPatch) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
 }
 
 func (fake *FakeAccountUpdater) UpdateArgs() []FakeAccountUpdaterUpdateArgs {

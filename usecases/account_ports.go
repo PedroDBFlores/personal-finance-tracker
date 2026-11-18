@@ -13,7 +13,7 @@ type AccountCreator interface {
 
 //counterfeiter:generate . AccountUpdater
 type AccountUpdater interface {
-	Update(ctx context.Context, account domain.Account) error
+	Update(ctx context.Context, id domain.Id, update domain.AccountPatch) error
 }
 
 //counterfeiter:generate . AccountGetter

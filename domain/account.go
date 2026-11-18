@@ -28,3 +28,15 @@ func NewAccount(id Id, name string, accountType AccountType, currency Currency, 
 		CreatedAt: createdAt,
 	}
 }
+
+// AccountPatch represents the fields to modify on an Account. Nil fields are left unchanged.
+type AccountPatch struct {
+	// Name replaces the account name when set.
+	Name *string
+	// Type replaces the account type when set.
+	Type *AccountType
+	// Currency replaces the account currency when set.
+	Currency *Currency
+	// CreatedAt replaces the account's creation timestamp when set.
+	CreatedAt *time.Time
+}
