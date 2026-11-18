@@ -6,6 +6,7 @@ import (
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type MovementRepository struct {
@@ -16,7 +17,8 @@ func NewMovementRepository(db *gorm.DB) MovementRepository {
 	return MovementRepository{db: db}
 }
 
-func (r *MovementRepository) Create(ctx context.Context, movement domain.Movement) (*domain.Id, error) {
+func (r *MovementRepository) Create(ctx context.Context, accountId domain.Id, movement domain.Movement) (*domain.Id, error) {
+	movement.AccountId = accountId
 	mov := domainMovementToDBMovement(movement)
 	if err := gorm.G[Movement](r.db).Create(ctx, &mov); err != nil {
 		return nil, err
@@ -25,21 +27,39 @@ func (r *MovementRepository) Create(ctx context.Context, movement domain.Movemen
 	return &id, nil
 }
 
-func (r *MovementRepository) Update(ctx context.Context, movement domain.Movement) error {
-	if rowsAffected, err := gorm.G[Movement](r.db).Updates(ctx, domainMovementToDBMovement(movement)); rowsAffected == 0 {
-		return app_errors.NewResourceNotFoundError("Movement", movement.Id.String())
-	} else if err != nil {
+func (r *MovementRepository) Update(ctx context.Context, accountId, id domain.Id, update domain.MovementPatch) error {
+	assignments := map[string]interface{}{}
+	if update.Description != nil {
+		assignments["description"] = *update.Description
+	}
+	if update.Value != nil {
+		assignments["value"] = *update.Value
+	}
+	if update.Type != nil {
+		assignments["movement_type"] = *update.Type
+	}
+	if update.Date != nil {
+		assignments["date"] = *update.Date
+	}
+	if len(assignments) == 0 {
+		return nil
+	}
+	if rowsAffected, err := gorm.G[Movement](r.db).
+		Where("id = ? AND account_id = ?", id, accountId).
+		Set(clause.Assignments(assignments)).Update(ctx); err != nil {
 		return err
+	} else if rowsAffected == 0 {
+		return app_errors.NewResourceNotFoundError("Movement", id.String())
 	}
 	return nil
 }
 
-func (r *MovementRepository) Get(ctx context.Context, id domain.Id) (*domain.Movement, error) {
-	if acc, err := gorm.G[Movement](r.db).Where("id = ?", id).First(ctx); err != nil {
+func (r *MovementRepository) Get(ctx context.Context, accountId, id domain.Id) (*domain.Movement, error) {
+	if mov, err := gorm.G[Movement](r.db).Where("id = ? AND account_id = ?", id, accountId).First(ctx); err != nil {
 		return nil, app_errors.NewResourceNotFoundError("Movement", id.String())
 	} else {
-		account := dbMovementToDomainMovement(acc)
-		return &account, nil
+		movement := dbMovementToDomainMovement(mov)
+		return &movement, nil
 	}
 }
 
@@ -56,8 +76,8 @@ func (r *MovementRepository) List(ctx context.Context, accountId domain.Id) ([]d
 	return modelMovements, nil
 }
 
-func (r *MovementRepository) Delete(ctx context.Context, id domain.Id) error {
-	if rowsAffected, err := gorm.G[Movement](r.db).Where("id = ?", id).Delete(ctx); err != nil {
+func (r *MovementRepository) Delete(ctx context.Context, accountId, id domain.Id) error {
+	if rowsAffected, err := gorm.G[Movement](r.db).Where("id = ? AND account_id = ?", id, accountId).Delete(ctx); err != nil {
 		return err
 	} else if rowsAffected == 0 {
 		return app_errors.NewResourceNotFoundError("Movement", id.String())

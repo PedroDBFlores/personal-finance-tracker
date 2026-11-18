@@ -13,7 +13,7 @@ type MovementCreator interface {
 
 //counterfeiter:generate . MovementUpdater
 type MovementUpdater interface {
-	Update(ctx context.Context, accountId domain.Id, movement domain.Movement) error
+	Update(ctx context.Context, accountId, id domain.Id, update domain.MovementPatch) error
 }
 
 //counterfeiter:generate . MovementGetter

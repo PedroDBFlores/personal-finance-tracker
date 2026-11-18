@@ -30,3 +30,15 @@ func NewMovement(accountId Id, description string, value Money, movementType Mov
 		Date:        date,
 	}
 }
+
+// MovementPatch represents the fields to modify on a Movement. Nil fields are left unchanged.
+type MovementPatch struct {
+	// Description replaces the movement description when set.
+	Description *string
+	// Value replaces the movement value when set.
+	Value *Money
+	// Type replaces the movement type when set.
+	Type *MovementType
+	// Date replaces the movement date when set.
+	Date *time.Time
+}
