@@ -2,7 +2,7 @@
 
 CLI app in Go for tracking personal finances: accounts, movements, investments and
 investment transactions. Data is persisted in SQLite (via GORM). The UI is a terminal
-UI built with Bubble Tea v2 (`cmd/main.go` is the composition root and TUI entrypoint).
+UI built with go-tui (`cmd/main.go` is the composition root and TUI entrypoint).
 
 ## Architecture
 
@@ -11,7 +11,7 @@ Clean Architecture (hexagonal). Dependencies point inward only:
 the rest of the project.
 
 ```
-cmd/                 composition root + Bubble Tea v2 TUI
+cmd/                 composition root + go-tui TUI (screens as .gsx components)
 adapters/database/   SQLite persistence: GORM models + repositories implementing usecase ports
 usecases/            ports (interfaces) at package root, implementations in usecases/<entity>/,
                      generated fakes in usecases/usecasesfakes/
@@ -64,15 +64,23 @@ app_errors/          shared error types (e.g. ResourceNotFoundError)
 ### cmd/ (TUI)
 
 - `main.go` is the composition root: it opens the SQLite database (GORM + `AutoMigrate`),
-  builds the repositories and usecases, and injects them into the Bubble Tea model.
+  builds the repositories and usecases, and injects them into the root screen component.
   No business logic lives here — `cmd` only wires and renders.
-- Bubble Tea v2 models implement `Init() tea.Cmd`, `Update(tea.Msg) (tea.Model, tea.Cmd)`
-  and `View() tea.View`.
-- Usecases hit the database, so never call them synchronously inside `Update`. Wrap the call
-  in a `tea.Cmd` that returns a result message (e.g. `accountsLoadedMsg{accs}` or `errMsg{err}`),
-  and apply that message to the model state in `Update`.
-- One model per screen; pass the usecases a screen needs through its constructor and pass
-  navigation data (e.g. an account id) via messages.
+- UI is built with [go-tui](https://github.com/grindlemire/go-tui): one component per screen,
+  declared in a `.gsx` file. A component is a struct holding `*tui.State[T]` fields, with a
+  `KeyMap() tui.KeyMap` for keys and a `templ (c *comp) Render()` template.
+- The `.gsx` file compiles to `<name>_gsx.go` via `//go:generate go run
+  github.com/grindlemire/go-tui/cmd/tui generate <name>.gsx`. Commit both the `.gsx` and the
+  generated `_gsx.go`; never edit the generated file by hand — change the `.gsx` and run
+  `go generate ./...`.
+- Usecases hit the database, so run them in a goroutine and post the result back with
+  `app.EventQueue() <- func() { state.Set(...) }`. Never mutate `tui.State` from outside the
+  event loop.
+- App lifecycle in `main.go`: `app, err := tui.NewApp(tui.WithRootComponent(screen))`,
+  `defer app.Close()`, `app.Run()`. Quit keys call `ke.App().Stop()`.
+- Screen tests (package `main`) exercise components without a terminal: call the `KeyMap()`
+  bindings directly with `tui.KeyEvent{Key: tui.KeyRune, Rune: 'r'}` and assert on
+  `state.Get()`.
 
 ### dtos/ and app_errors/
 
@@ -108,7 +116,8 @@ Verified with Go 1.27:
 go build ./...
 go test ./...
 go vet ./...
-go generate ./...   # regenerate counterfeiter fakes after changing ports
+go generate ./...   # regenerate counterfeiter fakes after changing ports,
+                    # and go-tui _gsx.go files after changing .gsx templates
 ```
 
 ## Housekeeping
