@@ -21,6 +21,23 @@ func NewCreateAccountDto(name string, accType domain.AccountType, currency domai
 	return CreateAccountDto{name, accType, currency, createdAt}
 }
 
+type UpdateAccountDto struct {
+	// Id identifies the account to update.
+	Id domain.Id
+	// Name defines the account name (e.g., "Chase Savings", "Fidelity Brokerage")
+	Name string
+	// Type defines the type of account.
+	Type domain.AccountType
+	// Currency defines the account's currency (e.g., "USD", "EUR")
+	Currency domain.Currency
+	// CreatedAt defines when the account was created.
+	CreatedAt time.Time
+}
+
+func NewUpdateAccountDto(id domain.Id, name string, accType domain.AccountType, currency domain.Currency, createdAt time.Time) UpdateAccountDto {
+	return UpdateAccountDto{id, name, accType, currency, createdAt}
+}
+
 type AccountDto struct {
 	domain.Account
 }
