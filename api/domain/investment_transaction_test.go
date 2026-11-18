@@ -1,143 +1,52 @@
-package domain
+package domain_test
 
 import (
-	"math/big"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewInvestmentTransaction(t *testing.T) {
 	id := uuid.New()
 	investmentId := uuid.New()
-	txType := Buy
-	amount := big.NewInt(10000) // $100.00
-	quantity := big.NewInt(100) // 1.00 shares
-	price := big.NewInt(10000)  // $100.00 per share
 	date := time.Now()
-	description := "Test Transaction"
 
-	transaction := NewInvestmentTransaction(id, investmentId, txType, *amount, *quantity, *price, date, description)
+	t.Run("creates a buy transaction", func(t *testing.T) {
+		tx := domain.NewInvestmentTransaction(id, investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), date, "Buy ETF")
 
-	if transaction.Id != id {
-		t.Errorf("Expected Id %v, got %v", id, transaction.Id)
-	}
-	if transaction.InvestmentId != investmentId {
-		t.Errorf("Expected InvestmentId %v, got %v", investmentId, transaction.InvestmentId)
-	}
-	if transaction.Type != txType {
-		t.Errorf("Expected Type %s, got %s", txType, transaction.Type)
-	}
-	if transaction.Amount.Cmp(amount) != 0 {
-		t.Errorf("Expected Amount %v, got %v", amount, transaction.Amount)
-	}
-	if transaction.Quantity.Cmp(quantity) != 0 {
-		t.Errorf("Expected Quantity %v, got %v", quantity, transaction.Quantity)
-	}
-	if transaction.Price.Cmp(price) != 0 {
-		t.Errorf("Expected Price %v, got %v", price, transaction.Price)
-	}
-	if !transaction.Date.Equal(date) {
-		t.Errorf("Expected Date %v, got %v", date, transaction.Date)
-	}
-	if transaction.Description != description {
-		t.Errorf("Expected Description %s, got %s", description, transaction.Description)
-	}
+		require.Equal(t, id, tx.Id)
+		require.Equal(t, investmentId, tx.InvestmentId)
+		require.Equal(t, domain.Buy, tx.Type)
+		require.Equal(t, domain.Money(0), tx.Amount)
+		require.Equal(t, domain.Money(1000), tx.Quantity)
+		require.Equal(t, domain.Money(10000), tx.Price)
+		require.True(t, tx.Date.Equal(date))
+		require.Equal(t, "Buy ETF", tx.Description)
+	})
+
+	t.Run("creates a deposit transaction", func(t *testing.T) {
+		tx := domain.NewInvestmentTransaction(id, investmentId, domain.Deposit, domain.Money(50000), 0, 0, date, "Deposit to savings")
+		require.Equal(t, domain.Deposit, tx.Type)
+		require.Equal(t, domain.Money(50000), tx.Amount)
+	})
 }
 
-func TestNewInvestmentTransactionWithDeposit(t *testing.T) {
-	id := uuid.New()
-	investmentId := uuid.New()
-	txType := Deposit
-	amount := big.NewInt(50000) // $500.00
-	quantity := big.NewInt(0)
-	price := big.NewInt(0)
-	date := time.Now()
-	description := "Deposit to savings"
+func TestParseInvestmentTransactionType(t *testing.T) {
+	t.Run("parses valid types", func(t *testing.T) {
+		for s, expected := range map[string]domain.InvestmentTransactionType{
+			"Buy": domain.Buy, "Sell": domain.Sell, "Deposit": domain.Deposit, "Withdraw": domain.Withdraw,
+		} {
+			got, err := domain.ParseInvestmentTransactionType(s)
+			require.NoError(t, err)
+			require.Equal(t, expected, got)
+		}
+	})
 
-	transaction := NewInvestmentTransaction(id, investmentId, txType, *amount, *quantity, *price, date, description)
-
-	if transaction.Type != txType {
-		t.Errorf("Expected Type %s, got %s", txType, transaction.Type)
-	}
-	if transaction.Amount.Cmp(amount) != 0 {
-		t.Errorf("Expected Amount %v, got %v", amount, transaction.Amount)
-	}
-	if transaction.Quantity.Cmp(quantity) != 0 {
-		t.Errorf("Expected Quantity %v, got %v", quantity, transaction.Quantity)
-	}
-	if transaction.Price.Cmp(price) != 0 {
-		t.Errorf("Expected Price %v, got %v", price, transaction.Price)
-	}
-}
-
-func TestNewInvestmentTransactionWithSell(t *testing.T) {
-	id := uuid.New()
-	investmentId := uuid.New()
-	txType := Sell
-	amount := big.NewInt(0)
-	quantity := big.NewInt(500) // 5.00 shares
-	price := big.NewInt(15000)  // $150.00 per share
-	date := time.Now()
-	description := "Sell ETF shares"
-
-	transaction := NewInvestmentTransaction(id, investmentId, txType, *amount, *quantity, *price, date, description)
-
-	if transaction.Type != txType {
-		t.Errorf("Expected Type %s, got %s", txType, transaction.Type)
-	}
-	if transaction.Quantity.Cmp(quantity) != 0 {
-		t.Errorf("Expected Quantity %v, got %v", quantity, transaction.Quantity)
-	}
-	if transaction.Price.Cmp(price) != 0 {
-		t.Errorf("Expected Price %v, got %v", price, transaction.Price)
-	}
-}
-
-func TestInvestmentTransactionDefaults(t *testing.T) {
-	id := uuid.Nil
-	investmentId := uuid.Nil
-	txType := InvestmentTransactionType("")
-	amount := big.NewInt(0)
-	quantity := big.NewInt(0)
-	price := big.NewInt(0)
-	date := time.Time{}
-	description := ""
-
-	transaction := InvestmentTransaction{
-		Id:           id,
-		InvestmentId: investmentId,
-		Type:         txType,
-		Amount:       *amount,
-		Quantity:     *quantity,
-		Price:        *price,
-		Date:         date,
-		Description:  description,
-	}
-
-	if transaction.Id != id {
-		t.Errorf("Expected Id %v, got %v", id, transaction.Id)
-	}
-	if transaction.InvestmentId != investmentId {
-		t.Errorf("Expected InvestmentId %v, got %v", investmentId, transaction.InvestmentId)
-	}
-	if transaction.Type != txType {
-		t.Errorf("Expected Type %s, got %s", txType, transaction.Type)
-	}
-	if transaction.Amount.Cmp(amount) != 0 {
-		t.Errorf("Expected Amount %v, got %v", amount, transaction.Amount)
-	}
-	if transaction.Quantity.Cmp(quantity) != 0 {
-		t.Errorf("Expected Quantity %v, got %v", quantity, transaction.Quantity)
-	}
-	if transaction.Price.Cmp(price) != 0 {
-		t.Errorf("Expected Price %v, got %v", price, transaction.Price)
-	}
-	if !transaction.Date.Equal(date) {
-		t.Errorf("Expected Date %v, got %v", date, transaction.Date)
-	}
-	if transaction.Description != description {
-		t.Errorf("Expected Description %s, got %s", description, transaction.Description)
-	}
+	t.Run("rejects invalid type", func(t *testing.T) {
+		_, err := domain.ParseInvestmentTransactionType("Transfer")
+		require.Error(t, err)
+	})
 }

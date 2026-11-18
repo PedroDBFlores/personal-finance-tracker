@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"gorm.io/gorm"
 )
@@ -29,6 +30,37 @@ type Movement struct {
 	Value        domain.Money
 	MovementType domain.MovementType
 	Date         time.Time
+}
+
+// Investment uses a uuid primary key (legacy id scheme for this entity),
+// so it cannot embed gorm.Model.
+type Investment struct {
+	ID           uuid.UUID             `gorm:"type:char(36);primaryKey"`
+	AccountId    uint                  `gorm:"not null;index"`
+	Name         string                `gorm:"not null;type:varchar(128)"`
+	Type         domain.InvestmentType `gorm:"not null;type:varchar(64)"`
+	CurrentValue domain.Money          `gorm:"not null"`
+	Currency     domain.Currency       `gorm:"not null;type:varchar(3)"`
+	PurchaseDate time.Time             `gorm:"not null"`
+	MaturityDate *time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
+}
+
+// InvestmentTransaction uses a uuid primary key (legacy id scheme for this entity).
+type InvestmentTransaction struct {
+	ID           uuid.UUID                        `gorm:"type:char(36);primaryKey"`
+	InvestmentId uuid.UUID                        `gorm:"type:char(36);not null;index"`
+	Type         domain.InvestmentTransactionType `gorm:"not null;type:varchar(64)"`
+	Amount       domain.Money                     `gorm:"not null"`
+	Quantity     domain.Money                     `gorm:"not null"`
+	Price        domain.Money                     `gorm:"not null"`
+	Date         time.Time                        `gorm:"not null"`
+	Description  string                           `gorm:"type:varchar(255)"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
 
 // Scan scan value into Jsonb, implements sql.Scanner interface

@@ -7,6 +7,11 @@ import {
   deleteAccount,
   listMovements,
   createMovement,
+  listInvestments,
+  getInvestment,
+  createInvestment,
+  listInvestmentTransactions,
+  createInvestmentTransaction,
   ApiError,
 } from "./api";
 
@@ -101,6 +106,67 @@ describe("api client", () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe(`${base}/accounts/2/movements`);
     expect(init.method).toBe("POST");
+  });
+
+  it("lists investments of an account", async () => {
+    const investments = [
+      { id: "inv-1", account_id: "2", name: "Vanguard ETF", type: "ETF", current_value: "760.00", currency: "USD", purchase_date: "2024-01-02T03:04:05Z", maturity_date: null },
+    ];
+    const fetchMock = mockFetchOnce(200, investments);
+
+    const result = await listInvestments("2");
+
+    expect(result).toEqual(investments);
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts/2/investments`, expect.anything());
+  });
+
+  it("gets a single investment", async () => {
+    const investment = { id: "inv-1", account_id: "2", name: "Vanguard ETF", type: "ETF", current_value: "760.00", currency: "USD", purchase_date: "2024-01-02T03:04:05Z", maturity_date: null };
+    const fetchMock = mockFetchOnce(200, investment);
+
+    const result = await getInvestment("2", "inv-1");
+
+    expect(result).toEqual(investment);
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts/2/investments/inv-1`, expect.anything());
+  });
+
+  it("creates an investment", async () => {
+    const created = { id: "inv-9", account_id: "2", name: "Vanguard ETF", type: "ETF", current_value: "0.00", currency: "USD", purchase_date: "2024-01-02T03:04:05Z", maturity_date: null };
+    const fetchMock = mockFetchOnce(201, created);
+
+    const result = await createInvestment("2", { name: "Vanguard ETF", type: "ETF", currency: "USD" });
+
+    expect(result).toEqual(created);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${base}/accounts/2/investments`);
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ name: "Vanguard ETF", type: "ETF", currency: "USD" });
+  });
+
+  it("lists transactions of an investment", async () => {
+    const txs = [
+      { id: "tx-1", investment_id: "inv-1", type: "Buy", amount: "0.00", quantity: "10.00", price: "100.00", date: "2024-01-02T03:04:05Z", description: "Initial Buy" },
+    ];
+    const fetchMock = mockFetchOnce(200, txs);
+
+    const result = await listInvestmentTransactions("2", "inv-1");
+
+    expect(result).toEqual(txs);
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts/2/investments/inv-1/transactions`, expect.anything());
+  });
+
+  it("creates an investment transaction", async () => {
+    const created = { id: "tx-9", investment_id: "inv-1", type: "Deposit", amount: "500.00", quantity: "0.00", price: "0.00", date: "2024-01-02T03:04:05Z", description: "Deposit" };
+    const fetchMock = mockFetchOnce(201, created);
+
+    const input = { type: "Deposit", amount: "500.00", quantity: "", price: "", description: "Deposit" };
+    const result = await createInvestmentTransaction("2", "inv-1", input);
+
+    expect(result).toEqual(created);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${base}/accounts/2/investments/inv-1/transactions`);
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual(input);
   });
 
   it("throws ApiError with status and message on failure", async () => {

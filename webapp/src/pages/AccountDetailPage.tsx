@@ -1,22 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Badge, Box, Heading, HStack, List, Text, VStack, Card } from "@chakra-ui/react";
-import type { Account, Movement } from "../api";
-import { getAccount, listMovements } from "../api";
+import type { Account, Investment, Movement } from "../api";
+import { getAccount, listInvestments, listMovements } from "../api";
 import { RouterLink } from "../components/RouterLink";
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [account, setAccount] = useState<Account | null>(null);
   const [movements, setMovements] = useState<Movement[]>([]);
+  const [investments, setInvestments] = useState<Investment[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     if (!id) return;
     try {
-      const [a, m] = await Promise.all([getAccount(id), listMovements(id)]);
+      const [a, m, invs] = await Promise.all([getAccount(id), listMovements(id), listInvestments(id)]);
       setAccount(a);
       setMovements(m);
+      setInvestments(invs);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -79,6 +81,41 @@ export default function AccountDetailPage() {
         <RouterLink to="/" color="fg.muted" alignSelf="start">
           Back to accounts
         </RouterLink>
+      </VStack>
+      <VStack align="stretch" gap={2} mt={6}>
+        <HStack justify="space-between">
+          <Heading size="md">Investments</Heading>
+          <RouterLink
+            to={`/accounts/${id}/investments/new`}
+            px="4"
+            py="2"
+            borderRadius="md"
+            bg="teal.500"
+            color="white"
+            _hover={{ bg: "teal.600" }}
+          >
+            New investment
+          </RouterLink>
+        </HStack>
+        <List.Root gap={2}>
+          {investments.map((inv) => (
+            <List.Item key={inv.id}>
+              <Card.Root size="sm">
+                <Card.Body>
+                  <HStack justify="space-between">
+                    <RouterLink to={`/accounts/${id}/investments/${inv.id}`} fontWeight="medium" color="teal.500">
+                      {inv.name}
+                    </RouterLink>
+                    <HStack gap={2}>
+                      <Badge colorPalette="gray">{inv.type}</Badge>
+                      <Text>{inv.current_value}</Text>
+                    </HStack>
+                  </HStack>
+                </Card.Body>
+              </Card.Root>
+            </List.Item>
+          ))}
+        </List.Root>
       </VStack>
     </Box>
   );

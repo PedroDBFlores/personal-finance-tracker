@@ -14,6 +14,11 @@ vi.mock("./api", async (importOriginal) => {
     createAccount: vi.fn(),
     listMovements: vi.fn(),
     createMovement: vi.fn(),
+    listInvestments: vi.fn(),
+    getInvestment: vi.fn(),
+    createInvestment: vi.fn(),
+    listInvestmentTransactions: vi.fn(),
+    createInvestmentTransaction: vi.fn(),
   };
 });
 
@@ -24,6 +29,21 @@ const accounts: api.Account[] = [
 
 const movements: api.Movement[] = [
   { id: "1", account_id: "1", description: "Salary", value: "1000.00", type: "Credit", date: "2024-01-02T03:04:05Z" },
+];
+
+const investment: api.Investment = {
+  id: "inv-1",
+  account_id: "1",
+  name: "Vanguard ETF",
+  type: "ETF",
+  current_value: "760.00",
+  currency: "USD",
+  purchase_date: "2024-01-02T03:04:05Z",
+  maturity_date: null,
+};
+
+const investmentTransactions: api.InvestmentTransaction[] = [
+  { id: "tx-1", investment_id: "inv-1", type: "Buy", amount: "0.00", quantity: "10.00", price: "100.00", date: "2024-01-02T03:04:05Z", description: "Initial Buy" },
 ];
 
 function renderAt(path: string) {
@@ -42,6 +62,11 @@ beforeEach(() => {
   vi.mocked(api.createAccount).mockResolvedValue(accounts[0]);
   vi.mocked(api.listMovements).mockResolvedValue(movements);
   vi.mocked(api.createMovement).mockResolvedValue(movements[0]);
+  vi.mocked(api.listInvestments).mockResolvedValue([investment]);
+  vi.mocked(api.getInvestment).mockResolvedValue(investment);
+  vi.mocked(api.createInvestment).mockResolvedValue(investment);
+  vi.mocked(api.listInvestmentTransactions).mockResolvedValue(investmentTransactions);
+  vi.mocked(api.createInvestmentTransaction).mockResolvedValue(investmentTransactions[0]);
 });
 
 describe("routing", () => {
@@ -85,5 +110,74 @@ describe("routing", () => {
     await waitFor(() => expect(api.createMovement).toHaveBeenCalledWith("1", { description: "Groceries", value: "25.99", type: "Credit" }));
     // back on the detail page, movements reloaded
     await waitFor(() => expect(api.listMovements).toHaveBeenCalledTimes(2));
+  });
+
+  it("account detail page also lists investments", async () => {
+    renderAt("/accounts/1");
+
+    expect(await screen.findByText("Vanguard ETF")).toBeInTheDocument();
+    expect(api.listInvestments).toHaveBeenCalledWith("1");
+  });
+
+  it("navigates from detail to the new-investment page, creates, and returns", async () => {
+    renderAt("/accounts/1");
+    fireEvent.click(await screen.findByRole("link", { name: /new investment/i }));
+
+    fireEvent.change(await screen.findByLabelText(/name/i), { target: { value: "New ETF" } });
+    fireEvent.click(screen.getByRole("button", { name: /add investment/i }));
+
+    await waitFor(() => expect(api.createInvestment).toHaveBeenCalledWith("1", { name: "New ETF", type: "ETF", currency: "USD" }));
+    // back on the detail page, investments reloaded
+    await waitFor(() => expect(api.listInvestments).toHaveBeenCalledTimes(2));
+  });
+
+  it("investment detail page shows its transactions", async () => {
+    renderAt("/accounts/1/investments/inv-1");
+
+    expect(await screen.findByText(/Initial Buy/)).toBeInTheDocument();
+    expect(api.getInvestment).toHaveBeenCalledWith("1", "inv-1");
+    expect(api.listInvestmentTransactions).toHaveBeenCalledWith("1", "inv-1");
+  });
+
+  it("navigates from investment detail to the new-transaction page, creates, and returns", async () => {
+    renderAt("/accounts/1/investments/inv-1");
+    fireEvent.click(await screen.findByRole("link", { name: /add transaction/i }));
+
+    fireEvent.change(await screen.findByLabelText(/transaction type/i), { target: { value: "Deposit" } });
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "500.00" } });
+    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: "Deposit" } });
+    fireEvent.click(screen.getByRole("button", { name: /add transaction/i }));
+
+    await waitFor(() =>
+      expect(api.createInvestmentTransaction).toHaveBeenCalledWith("1", "inv-1", {
+        type: "Deposit",
+        amount: "500.00",
+        quantity: "",
+        price: "",
+        description: "Deposit",
+      }),
+    );
+    // back on the investment detail page, transactions reloaded
+    await waitFor(() => expect(api.listInvestmentTransactions).toHaveBeenCalledTimes(2));
+  });
+
+  it("computes the amount from quantity and price for buy/sell transactions", async () => {
+    renderAt("/accounts/1/investments/inv-1");
+    fireEvent.click(await screen.findByRole("link", { name: /add transaction/i }));
+
+    fireEvent.change(await screen.findByLabelText(/transaction type/i), { target: { value: "Buy" } });
+    fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: "10" } });
+    fireEvent.change(screen.getByLabelText(/price/i), { target: { value: "100.00" } });
+    fireEvent.click(screen.getByRole("button", { name: /add transaction/i }));
+
+    await waitFor(() =>
+      expect(api.createInvestmentTransaction).toHaveBeenCalledWith("1", "inv-1", {
+        type: "Buy",
+        amount: "1000.00",
+        quantity: "10",
+        price: "100.00",
+        description: "",
+      }),
+    );
   });
 });

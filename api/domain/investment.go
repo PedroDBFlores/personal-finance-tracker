@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,16 +11,16 @@ type Investment struct {
 	// Id represents the unique investment identifier.
 	Id uuid.UUID
 	// AccountId links the investment to an account.
-	AccountId uuid.UUID
+	AccountId Id
 	// Name defines the investment name (e.g., "Vanguard S&P 500 ETF", "Ally Bank CD")
 	Name string
 	// Type defines the type of investment.
 	Type InvestmentType
-	// CurrentValue represents the current value of the investment (calculated as Quantity * Price).
+	// CurrentValue represents the current value of the investment (calculated from its transactions).
 	// Last two digits are cents.
-	CurrentValue big.Int
+	CurrentValue Money
 	// Currency defines the investment's currency (e.g., "USD", "EUR")
-	Currency string
+	Currency Currency
 	// PurchaseDate defines when the investment was purchased or opened.
 	PurchaseDate time.Time
 	// MaturityDate defines when a term deposit matures (optional).
@@ -29,13 +28,13 @@ type Investment struct {
 }
 
 // NewInvestment creates a new Investment based on the provided parameters.
-// currentValue is calculated from transactions, so it can be zero initially.
+// CurrentValue is calculated from transactions, so it starts at zero.
 func NewInvestment(
 	id uuid.UUID,
-	accountId uuid.UUID,
+	accountId Id,
 	name string,
 	investmentType InvestmentType,
-	currency string,
+	currency Currency,
 	purchaseDate time.Time,
 	maturityDate *time.Time,
 ) Investment {
@@ -44,44 +43,57 @@ func NewInvestment(
 		AccountId:    accountId,
 		Name:         name,
 		Type:         investmentType,
-		CurrentValue: *big.NewInt(0),
+		CurrentValue: 0,
 		Currency:     currency,
 		PurchaseDate: purchaseDate,
 		MaturityDate: maturityDate,
 	}
 }
 
-// UpdateCurrentValue recalculates the CurrentValue based on the latest transactions.
-// For ETFs: sum of (Quantity * Price) for all Buy transactions minus Sell transactions.
-// For Savings/TermDeposit: sum of Deposit transactions minus Withdrawal transactions.
+// UpdateCurrentValue recalculates the CurrentValue based on the given transactions.
+// For ETFs: sum of (Quantity * Price) for Buy transactions minus Sell transactions.
+// For Savings/TermDeposit: sum of Deposit amounts minus Withdrawal amounts.
 func (i *Investment) UpdateCurrentValue(transactions []InvestmentTransaction) {
-	value := big.NewInt(0)
+	value := Money(0)
 
 	for _, tx := range transactions {
 		if tx.InvestmentId != i.Id {
 			continue
 		}
 
-		// Handle ETF transactions (Buy/Sell)
 		if i.Type == ETF {
+			// Quantity is in hundredths of a share and Price in cents,
+			// so the product is Quantity * Price / 100 cents.
+			product := tx.Price * tx.Quantity / 100
 			if tx.Type == Buy {
-				// Add to value: Quantity * Price
-				product := new(big.Int).Mul(&tx.Quantity, &tx.Price)
-				value.Add(value, product)
+				value = value.Add(product)
 			} else if tx.Type == Sell {
-				// Subtract from value: Quantity * Price
-				product := new(big.Int).Mul(&tx.Quantity, &tx.Price)
-				value.Sub(value, product)
+				value = value.Subtract(product)
 			}
 		} else {
-			// Handle Savings/TermDeposit transactions (Deposit/Withdraw)
 			if tx.Type == Deposit {
-				value.Add(value, &tx.Amount)
+				value = value.Add(tx.Amount)
 			} else if tx.Type == Withdraw {
-				value.Sub(value, &tx.Amount)
+				value = value.Subtract(tx.Amount)
 			}
 		}
 	}
 
-	i.CurrentValue = *value
+	i.CurrentValue = value
+}
+
+// InvestmentPatch represents the fields to modify on an Investment. Nil fields are left unchanged.
+type InvestmentPatch struct {
+	// Name replaces the investment name when set.
+	Name *string
+	// Type replaces the investment type when set.
+	Type *InvestmentType
+	// Currency replaces the investment currency when set.
+	Currency *Currency
+	// PurchaseDate replaces the purchase date when set.
+	PurchaseDate *time.Time
+	// MaturityDate replaces the maturity date when set; a non-nil pointer to nil clears it.
+	MaturityDate **time.Time
+	// CurrentValue replaces the current value when set.
+	CurrentValue *Money
 }

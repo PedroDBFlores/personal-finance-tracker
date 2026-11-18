@@ -1,178 +1,90 @@
-package domain
+package domain_test
 
 import (
-	"math/big"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewInvestment(t *testing.T) {
 	id := uuid.New()
-	accountId := uuid.New()
-	name := "Test Investment"
-	investmentType := ETF
-	currency := "USD"
+	accountId := domain.NewId()
 	purchaseDate := time.Now()
-	maturityDate := time.Now().AddDate(1, 0, 0) // 1 year from now
+	maturityDate := purchaseDate.AddDate(1, 0, 0)
 
-	investment := NewInvestment(id, accountId, name, investmentType, currency, purchaseDate, &maturityDate)
+	t.Run("creates an investment with all fields", func(t *testing.T) {
+		inv := domain.NewInvestment(id, accountId, "Test Investment", domain.ETF, domain.CurrencyUSD, purchaseDate, &maturityDate)
 
-	if investment.Id != id {
-		t.Errorf("Expected Id %v, got %v", id, investment.Id)
-	}
-	if investment.AccountId != accountId {
-		t.Errorf("Expected AccountId %v, got %v", accountId, investment.AccountId)
-	}
-	if investment.Name != name {
-		t.Errorf("Expected Name %s, got %s", name, investment.Name)
-	}
-	if investment.Type != investmentType {
-		t.Errorf("Expected Type %s, got %s", investmentType, investment.Type)
-	}
-	if investment.CurrentValue.Cmp(big.NewInt(0)) != 0 {
-		t.Errorf("Expected CurrentValue 0, got %v", investment.CurrentValue)
-	}
-	if investment.Currency != currency {
-		t.Errorf("Expected Currency %s, got %s", currency, investment.Currency)
-	}
-	if !investment.PurchaseDate.Equal(purchaseDate) {
-		t.Errorf("Expected PurchaseDate %v, got %v", purchaseDate, investment.PurchaseDate)
-	}
-	if investment.MaturityDate == nil || !investment.MaturityDate.Equal(maturityDate) {
-		t.Errorf("Expected MaturityDate %v, got %v", maturityDate, investment.MaturityDate)
-	}
+		require.Equal(t, id, inv.Id)
+		require.Equal(t, accountId, inv.AccountId)
+		require.Equal(t, "Test Investment", inv.Name)
+		require.Equal(t, domain.ETF, inv.Type)
+		require.Equal(t, domain.Money(0), inv.CurrentValue)
+		require.Equal(t, domain.CurrencyUSD, inv.Currency)
+		require.True(t, inv.PurchaseDate.Equal(purchaseDate))
+		require.NotNil(t, inv.MaturityDate)
+		require.True(t, inv.MaturityDate.Equal(maturityDate))
+	})
+
+	t.Run("creates an investment without maturity date", func(t *testing.T) {
+		inv := domain.NewInvestment(id, accountId, "Savings", domain.Savings, domain.CurrencyUSD, purchaseDate, nil)
+		require.Nil(t, inv.MaturityDate)
+	})
 }
 
-func TestNewInvestmentWithoutMaturityDate(t *testing.T) {
-	id := uuid.New()
-	accountId := uuid.New()
-	name := "Test Investment"
-	investmentType := Savings
-	currency := "USD"
-	purchaseDate := time.Now()
-
-	investment := NewInvestment(id, accountId, name, investmentType, currency, purchaseDate, nil)
-
-	if investment.Id != id {
-		t.Errorf("Expected Id %v, got %v", id, investment.Id)
-	}
-	if investment.MaturityDate != nil {
-		t.Errorf("Expected MaturityDate nil, got %v", investment.MaturityDate)
-	}
-}
-
-func TestUpdateCurrentValueForETF(t *testing.T) {
+func TestUpdateCurrentValue(t *testing.T) {
 	investmentId := uuid.New()
-	accountId := uuid.New()
-	investment := NewInvestment(investmentId, accountId, "Vanguard ETF", ETF, "USD", time.Now(), nil)
+	accountId := domain.NewId()
+	now := time.Now()
 
-	// Buy 10 shares at $100 each (value = $1000.00)
-	// Quantity is 10 shares (10 * 10000 (price) = 100000 cents = $1000.00)
-	buyQuantity := big.NewInt(10) // 10 shares
-	buyPrice := big.NewInt(10000) // $100.00 (10000 cents)
-	buyTransaction := NewInvestmentTransaction(
-		uuid.New(),
-		investmentId,
-		Buy,
-		*big.NewInt(0),
-		*buyQuantity,
-		*buyPrice,
-		time.Now(),
-		"Initial Buy",
-	)
+	t.Run("for ETF: buy minus sell", func(t *testing.T) {
+		inv := domain.NewInvestment(investmentId, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, now, nil)
 
-	// Sell 2 shares at $120 each (value = $240.00)
-	sellQuantity := big.NewInt(2)  // 2 shares
-	sellPrice := big.NewInt(12000) // $120.00 (12000 cents)
-	sellTransaction := NewInvestmentTransaction(
-		uuid.New(),
-		investmentId,
-		Sell,
-		*big.NewInt(0),
-		*sellQuantity,
-		*sellPrice,
-		time.Now().AddDate(0, 1, 0),
-		"Partial Sell",
-	)
+		// Buy 10 shares at $100.00 each -> 10*100*100 = 100000 cents
+		buy := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), now, "Initial Buy")
+		// Sell 2 shares at $120.00 each -> 2*120*100 = 24000 cents
+		sell := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), now, "Partial Sell")
 
-	transactions := []InvestmentTransaction{buyTransaction, sellTransaction}
-	investment.UpdateCurrentValue(transactions)
+		inv.UpdateCurrentValue([]domain.InvestmentTransaction{buy, sell})
+		require.Equal(t, domain.Money(76000), inv.CurrentValue)
+	})
 
-	// Expected: (10 * 10000) - (2 * 12000) = 100000 - 24000 = 76000 ($760.00)
-	expectedValue := big.NewInt(76000)
-	if investment.CurrentValue.Cmp(expectedValue) != 0 {
-		t.Errorf("Expected CurrentValue %v, got %v", expectedValue, investment.CurrentValue)
-	}
+	t.Run("for savings: deposit minus withdraw", func(t *testing.T) {
+		inv := domain.NewInvestment(investmentId, accountId, "Savings", domain.Savings, domain.CurrencyUSD, now, nil)
+
+		deposit := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Deposit, domain.Money(50000), 0, 0, now, "Deposit")
+		withdraw := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Withdraw, domain.Money(20000), 0, 0, now, "Withdraw")
+
+		inv.UpdateCurrentValue([]domain.InvestmentTransaction{deposit, withdraw})
+		require.Equal(t, domain.Money(30000), inv.CurrentValue)
+	})
+
+	t.Run("ignores transactions of other investments", func(t *testing.T) {
+		inv := domain.NewInvestment(investmentId, accountId, "ETF", domain.ETF, domain.CurrencyUSD, now, nil)
+
+		other := domain.NewInvestmentTransaction(uuid.New(), uuid.New(), domain.Deposit, domain.Money(100000), 0, 0, now, "Other")
+
+		inv.UpdateCurrentValue([]domain.InvestmentTransaction{other})
+		require.Equal(t, domain.Money(0), inv.CurrentValue)
+	})
 }
 
-func TestUpdateCurrentValueForSavings(t *testing.T) {
-	investmentId := uuid.New()
-	accountId := uuid.New()
-	investment := NewInvestment(investmentId, accountId, "Savings Account", Savings, "USD", time.Now(), nil)
+func TestParseInvestmentType(t *testing.T) {
+	t.Run("parses valid types", func(t *testing.T) {
+		for s, expected := range map[string]domain.InvestmentType{
+			"ETF": domain.ETF, "Savings": domain.Savings, "TermDeposit": domain.TermDeposit,
+		} {
+			got, err := domain.ParseInvestmentType(s)
+			require.NoError(t, err)
+			require.Equal(t, expected, got)
+		}
+	})
 
-	// Deposit $500.00
-	depositAmount := big.NewInt(50000)
-	depositTransaction := NewInvestmentTransaction(
-		uuid.New(),
-		investmentId,
-		Deposit,
-		*depositAmount,
-		*big.NewInt(0),
-		*big.NewInt(0),
-		time.Now(),
-		"Deposit",
-	)
-
-	// Withdraw $200.00
-	withdrawAmount := big.NewInt(20000)
-	withdrawTransaction := NewInvestmentTransaction(
-		uuid.New(),
-		investmentId,
-		Withdraw,
-		*withdrawAmount,
-		*big.NewInt(0),
-		*big.NewInt(0),
-		time.Now().AddDate(0, 1, 0),
-		"Withdraw",
-	)
-
-	transactions := []InvestmentTransaction{depositTransaction, withdrawTransaction}
-	investment.UpdateCurrentValue(transactions)
-
-	// Expected: 50000 - 20000 = 30000 ($300.00)
-	expectedValue := big.NewInt(30000)
-	if investment.CurrentValue.Cmp(expectedValue) != 0 {
-		t.Errorf("Expected CurrentValue %v, got %v", expectedValue, investment.CurrentValue)
-	}
-}
-
-func TestUpdateCurrentValueWithUnrelatedTransactions(t *testing.T) {
-	investmentId := uuid.New()
-	otherInvestmentId := uuid.New()
-	accountId := uuid.New()
-	investment := NewInvestment(investmentId, accountId, "Test Investment", ETF, "USD", time.Now(), nil)
-
-	// Transaction for a different investment
-	otherDepositAmount := big.NewInt(100000)
-	otherTransaction := NewInvestmentTransaction(
-		uuid.New(),
-		otherInvestmentId,
-		Deposit,
-		*otherDepositAmount,
-		*big.NewInt(0),
-		*big.NewInt(0),
-		time.Now(),
-		"Deposit",
-	)
-
-	transactions := []InvestmentTransaction{otherTransaction}
-	investment.UpdateCurrentValue(transactions)
-
-	// Should remain zero since the transaction is for a different investment
-	expectedValue := big.NewInt(0)
-	if investment.CurrentValue.Cmp(expectedValue) != 0 {
-		t.Errorf("Expected CurrentValue %v, got %v", expectedValue, investment.CurrentValue)
-	}
+	t.Run("rejects invalid type", func(t *testing.T) {
+		_, err := domain.ParseInvestmentType("Crypto")
+		require.Error(t, err)
+	})
 }

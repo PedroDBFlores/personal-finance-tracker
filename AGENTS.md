@@ -30,8 +30,11 @@ webapp/src/*.test.ts(x)  vitest tests (jsdom); api client tests mock fetch, comp
 - **Routing: react-router v8.** `App.tsx` exports `AppRoutes` (the `<Routes>` table) so tests
   can render it inside a `MemoryRouter`; the default `App` wraps it in `BrowserRouter`.
   Routes: `/` accounts list, `/accounts/new` create account, `/accounts/:id` account detail
-  with movements, `/accounts/:id/movements/new` create movement. Navigate with
-  `useNavigate`/`<RouterLink to=...>`; page params via `useParams`.
+  with movements and investments, `/accounts/:id/movements/new` create movement,
+  `/accounts/:id/investments/new` create investment,
+  `/accounts/:id/investments/:investmentId` investment detail with transactions,
+  `/accounts/:id/investments/:investmentId/transactions/new` create transaction.
+  Navigate with `useNavigate`/`<RouterLink to=...>`; page params via `useParams`.
 - **UI kit: Chakra UI v3** (`@chakra-ui/react` + `@emotion/react`). Wrap the app in
   `Provider` (`src/components/ui/provider.tsx`) in `main.tsx`; use Chakra components
   (Container, Card, Button, Field, Input, NativeSelect, Badge, ...) with colorPalette /
@@ -70,10 +73,15 @@ api/app_errors/         shared error types (e.g. ResourceNotFoundError)
 - Value objects and enums live here too (`Money`, `Id`, `Currency`, `AccountType`,
   `MovementType`, ...). Enums are string types with a const block and a `ParseX(s string)` func.
 - IDs: use `domain.Id` (uint, SQLite autoincrement) for all new entities.
-  `Investment`/`InvestmentTransaction` still use `uuid.UUID` from earlier iterations —
-  do not extend that pattern to new code.
+  `Investment`/`InvestmentTransaction` still use `uuid.UUID` for their own ids from earlier
+  iterations — do not extend that pattern to new code. But `Investment.AccountId` is a
+  `domain.Id` FK to `Account` (adjusted when investments were wired up).
 - `Money` is `int64` minor units: the last two digits are always the cents.
   `domain.ParseMoney("12.34")` parses a decimal string into minor units (used by the API).
+- Investments: `Investment.CurrentValue` is derived, not stored user input — the
+  `Get`/`List` investment usecases fetch the investment's transactions and call
+  `inv.UpdateCurrentValue(txs)` before returning the DTO. `InvestmentTransaction.Quantity`
+  is also `Money`-style (hundredths of a share), so ETF value = `Price * Quantity / 100`.
 
 ### api/usecases/
 
@@ -96,6 +104,9 @@ api/app_errors/         shared error types (e.g. ResourceNotFoundError)
 ### api/adapters/database/
 
 - GORM models in `models.go` (embed `gorm.Model`), SQLite via `gorm.io/driver/sqlite`.
+  Exception: `Investment`/`InvestmentTransaction` use a `uuid.UUID` primary key
+  (`gorm:"type:char(36);primaryKey"`) so they declare `CreatedAt`/`UpdatedAt`/`DeletedAt`
+  explicitly instead of embedding `gorm.Model`.
 - One repository per entity (`AccountRepository`, `MovementRepository`), constructed
   with `NewXxxRepository(db *gorm.DB)`, methods matching the ports exactly.
 - Convert between layers with unexported helpers `dbXToDomainX` / `domainXToDBX`
@@ -109,12 +120,16 @@ api/app_errors/         shared error types (e.g. ResourceNotFoundError)
 
 - chi router (`github.com/go-chi/chi/v5`). One handler per entity
   (`account_handler.go`, `movement_handler.go`) plus `router.go` with `NewRouter`.
-- Routes: `POST/GET /accounts`, `GET/PATCH/DELETE /accounts/{id}`, and nested
-  `POST/GET /accounts/{accountId}/movements`, `GET/PATCH/DELETE .../movements/{movementId}`.
+- Routes: `POST/GET /accounts`, `GET/PATCH/DELETE /accounts/{id}`, nested
+  `POST/GET /accounts/{accountId}/movements`, `GET/PATCH/DELETE .../movements/{movementId}`,
+  nested `POST/GET /accounts/{accountId}/investments`,
+  `GET/PATCH/DELETE .../investments/{investmentId}` (uuid param, parsed with `uuid.Parse`),
+  and nested `.../investments/{investmentId}/transactions[/{transactionId}]`.
 - Handlers depend on narrow interfaces matching the usecase `Execute` signatures
   (satisfied by the usecase structs). Request/response are JSON wire types defined in
   the handler file; money crosses the wire as a decimal string (`"25.99"`), converted
-  with `domain.ParseMoney` / `Money.String()`.
+  with `domain.ParseMoney` / `Money.String()`. Empty money fields in transaction
+  create requests mean zero (`parseMoneyParam`).
 - Error mapping: `ResourceNotFoundError` -> 404, invalid body/params -> 400,
   anything else -> 500; error responses are `{"error": "..."}`.
 - **Handler tests use the same pattern as usecase tests**: build the real usecase with a

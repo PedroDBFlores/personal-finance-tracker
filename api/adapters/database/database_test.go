@@ -17,6 +17,6 @@ func getInMemoryDatabase(t *testing.T, _logger *slog.Logger) (*gorm.DB, error) {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	db.AutoMigrate(&database.Account{}, &database.Movement{})
+	db.AutoMigrate(&database.Account{}, &database.Movement{}, &database.Investment{}, &database.InvestmentTransaction{})
 	return db, err
 }

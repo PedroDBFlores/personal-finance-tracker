@@ -94,3 +94,69 @@ export function createMovement(accountId: string, input: CreateMovementInput): P
     body: JSON.stringify(input),
   });
 }
+
+export interface Investment {
+  id: string;
+  account_id: string;
+  name: string;
+  type: string;
+  current_value: string; // decimal string, e.g. "760.00"
+  currency: string;
+  purchase_date: string;
+  maturity_date?: string | null;
+}
+
+export interface CreateInvestmentInput {
+  name: string;
+  type: string;
+  currency: string;
+}
+
+export interface InvestmentTransaction {
+  id: string;
+  investment_id: string;
+  type: string;
+  amount: string; // decimal string, e.g. "500.00"
+  quantity: string; // decimal string, e.g. "10"
+  price: string; // decimal string, e.g. "100.00"
+  date: string;
+  description: string;
+}
+
+export interface CreateInvestmentTransactionInput {
+  type: string;
+  amount: string;
+  quantity: string;
+  price: string;
+  description: string;
+}
+
+export function listInvestments(accountId: string): Promise<Investment[]> {
+  return request<Investment[]>(`/accounts/${accountId}/investments`);
+}
+
+export function getInvestment(accountId: string, id: string): Promise<Investment> {
+  return request<Investment>(`/accounts/${accountId}/investments/${id}`);
+}
+
+export function createInvestment(accountId: string, input: CreateInvestmentInput): Promise<Investment> {
+  return request<Investment>(`/accounts/${accountId}/investments`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function listInvestmentTransactions(accountId: string, investmentId: string): Promise<InvestmentTransaction[]> {
+  return request<InvestmentTransaction[]>(`/accounts/${accountId}/investments/${investmentId}/transactions`);
+}
+
+export function createInvestmentTransaction(
+  accountId: string,
+  investmentId: string,
+  input: CreateInvestmentTransactionInput,
+): Promise<InvestmentTransaction> {
+  return request<InvestmentTransaction>(`/accounts/${accountId}/investments/${investmentId}/transactions`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
