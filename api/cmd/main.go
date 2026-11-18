@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 
-	tui "github.com/grindlemire/go-tui"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/database"
+	"github.com/pedrodbflores/personal-finance-tracker/adapters/rest"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases/account"
+	"github.com/pedrodbflores/personal-finance-tracker/usecases/movement"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -25,20 +27,27 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	accountRepo := database.NewAccountRepository(db)
-	listAccounts := account.NewListAccountsUseCase(&accountRepo, logger)
+	movementRepo := database.NewMovementRepository(db)
+
 	createAccount := account.NewCreateAccountUseCase(&accountRepo, logger)
+	getAccount := account.NewGetAccountUseCase(&accountRepo, logger)
+	listAccounts := account.NewListAccountsUseCase(&accountRepo, logger)
+	updateAccount := account.NewUpdateAccountUseCase(&accountRepo, logger)
+	deleteAccount := account.NewDeleteAccountUseCase(&accountRepo, logger)
 
-	screen := newAccountsScreen(&listAccounts, &createAccount)
-	app, err := tui.NewApp(tui.WithRootComponent(screen))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create app: %v\n", err)
-		os.Exit(1)
-	}
-	defer app.Close()
+	createMovement := movement.NewCreateMovementUseCase(&movementRepo, logger)
+	getMovement := movement.NewGetMovementUseCase(&movementRepo, logger)
+	listMovements := movement.NewListMovementsUseCase(&movementRepo, logger)
+	updateMovement := movement.NewUpdateMovementUseCase(&movementRepo, logger)
+	deleteMovement := movement.NewDeleteMovementUseCase(&movementRepo, logger)
 
-	screen.load(app.EventQueue())
-	if err := app.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "error running app: %v\n", err)
+	accountHandler := rest.NewAccountHandler(&createAccount, &getAccount, &listAccounts, &updateAccount, &deleteAccount, logger)
+	movementHandler := rest.NewMovementHandler(&createMovement, &getMovement, &listMovements, &updateMovement, &deleteMovement, logger)
+
+	addr := ":8080"
+	fmt.Fprintf(os.Stderr, "listening on %s\n", addr)
+	if err := http.ListenAndServe(addr, rest.NewRouter(accountHandler, movementHandler)); err != nil {
+		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
 		os.Exit(1)
 	}
 }

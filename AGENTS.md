@@ -1,26 +1,54 @@
 # Personal Finance Tracker — AGENTS.md
 
-CLI app in Go for tracking personal finances: accounts, movements, investments and
-investment transactions. Data is persisted in SQLite (via GORM). The UI is a terminal
-UI built with go-tui (`cmd/main.go` is the composition root and TUI entrypoint).
+Personal finance tracker, tracked as **two projects** in this repo:
 
-## Architecture
+```
+api/                 Go REST API (Clean Architecture, SQLite via GORM, chi router)
+webapp/              React webapp (to be created) — consumes the api over HTTP
+```
+
+- `api/` is a self-contained Go module (`api/go.mod`). All Go commands run from `api/`.
+- `webapp/` is a separate Vite + React + TypeScript project with its own tooling; it must
+  only talk to the API over HTTP (default `http://localhost:8080`, override with
+  `VITE_API_URL`), never import Go code.
+- **webapp uses pnpm** (pinned via `"packageManager": "pnpm@12.21.0"` in `webapp/package.json`).
+  Use `pnpm install` / `pnpm add` / `pnpm test` / `pnpm build` / `pnpm dev` from `webapp/` —
+  never npm/yarn there. `pnpm-lock.yaml` is committed; no `package-lock.json`.
+- Shared repo files: `README.md`, this `AGENTS.md`, `.gitignore`.
+
+## webapp/ — structure and commands
+
+```
+webapp/src/api.ts        typed API client (fetch wrapper, ApiError with status, base URL from VITE_API_URL)
+webapp/src/App.tsx      accounts list + create form + movements panel per selected account
+webapp/src/*.test.ts(x)  vitest tests (jsdom); api client tests mock fetch, component tests mock ./api
+```
+
+- Tests: `pnpm test` (vitest run), `pnpm test:watch`. TDD applies here too: failing test first.
+- Component tests mock the `./api` module with `vi.mock` and assert on the mocked functions;
+  API client tests stub `fetch` with `vi.stubGlobal`.
+- Build/lint: `pnpm build` (tsc + vite build), `pnpm lint` (oxlint). Dev server: `pnpm dev` (:5173).
+- The API sends permissive CORS headers (`Access-Control-Allow-Origin: *`) so the dev server
+  can call it cross-origin.
+
+## api/ — Architecture
 
 Clean Architecture (hexagonal). Dependencies point inward only:
 `cmd` -> `adapters` -> `usecases` -> `domain`. `domain` must not import anything from
 the rest of the project.
 
 ```
-cmd/                 composition root + go-tui TUI (screens as .gsx components)
-adapters/database/   SQLite persistence: GORM models + repositories implementing usecase ports
-usecases/            ports (interfaces) at package root, implementations in usecases/<entity>/,
-                     generated fakes in usecases/usecasesfakes/
-domain/              entities, value objects, enums — no project-internal dependencies
-dtos/                input/output DTOs used by usecases
-app_errors/          shared error types (e.g. ResourceNotFoundError)
+api/cmd/             composition root: opens SQLite, builds repos + usecases, serves HTTP on :8080
+api/adapters/database/  SQLite persistence: GORM models + repositories implementing usecase ports
+api/adapters/rest/      HTTP handlers (chi): one file per entity + router.go
+api/usecases/           ports (interfaces) at package root, implementations in usecases/<entity>/,
+                        generated fakes in usecases/usecasesfakes/
+api/domain/             entities, value objects, enums — no project-internal dependencies
+api/dtos/               input/output DTOs used by usecases
+api/app_errors/         shared error types (e.g. ResourceNotFoundError)
 ```
 
-### domain/
+### api/domain/
 
 - One file per concept (`account.go`, `movement.go`, ...). Entities are plain structs
   with a doc comment on every field and a `NewX(...)` constructor.
@@ -30,17 +58,17 @@ app_errors/          shared error types (e.g. ResourceNotFoundError)
   `Investment`/`InvestmentTransaction` still use `uuid.UUID` from earlier iterations —
   do not extend that pattern to new code.
 - `Money` is `int64` minor units: the last two digits are always the cents.
+  `domain.ParseMoney("12.34")` parses a decimal string into minor units (used by the API).
 
-### usecases/
+### api/usecases/
 
 - Ports are interfaces in the root `usecases` package, one file per entity
   (`account_ports.go`, `movement_ports.go`). Each interface carries a
   `//counterfeiter:generate . XxxYyy` directive. Naming: `<Entity>Creator`,
   `<Entity>Updater`, `<Entity>Getter`, `<Entity>Lister`, `<Entity>Deleter`.
-  Methods take `ctx context.Context` first; signatures return `(*domain.Id, error)`
-  for Create, `(*domain.X, error)` for Get, `([]domain.X, error)` for List, `error`
-  for Update/Delete. Child entities are scoped by their parent id (e.g. movement
-  ports take `accountId`).
+  Methods take `ctx context.Context` first. Child entities are scoped by their parent id
+  (e.g. movement ports take `accountId`). Updates take a `<Entity>Patch` struct with
+  pointer fields (nil = leave unchanged) — partial updates.
 - Implementations live in `usecases/<entity>/`, one usecase per file:
   `<verb>_<entity>_usecase.go`, package `<entity>`. Struct `XxxUseCase` holds the ports
   (private fields) plus a `*slog.Logger`; constructor `NewXxxUseCase(ports..., logger)`;
@@ -50,7 +78,7 @@ app_errors/          shared error types (e.g. ResourceNotFoundError)
   (`//go:generate go tool counterfeiter -generate` in `usecases/doc.go`). Never edit
   them by hand — run `go generate ./...` after changing a port.
 
-### adapters/database/
+### api/adapters/database/
 
 - GORM models in `models.go` (embed `gorm.Model`), SQLite via `gorm.io/driver/sqlite`.
 - One repository per entity (`AccountRepository`, `MovementRepository`), constructed
@@ -59,32 +87,27 @@ app_errors/          shared error types (e.g. ResourceNotFoundError)
   in the repository file.
 - On `Get`/`Update`/`Delete` of a missing row return
   `app_errors.NewResourceNotFoundError("<Entity>", id.String())` (check the error from
-  `First` or rows affected == 0).
+  `First` or rows affected == 0). Partial updates use `clause.Assignments` with only the
+  non-nil patch fields.
 
-### cmd/ (TUI)
+### api/adapters/rest/ (HTTP handlers)
 
-- `main.go` is the composition root: it opens the SQLite database (GORM + `AutoMigrate`),
-  builds the repositories and usecases, and injects them into the root screen component.
-  No business logic lives here — `cmd` only wires and renders.
-- UI is built with [go-tui](https://github.com/grindlemire/go-tui): one component per screen,
-  declared in a `.gsx` file. A component is a struct holding `*tui.State[T]` fields, with a
-  `KeyMap() tui.KeyMap` for keys and a `templ (c *comp) Render()` template.
-- The `.gsx` file compiles to `<name>_gsx.go` via `//go:generate go run
-  github.com/grindlemire/go-tui/cmd/tui generate <name>.gsx`. Commit both the `.gsx` and the
-  generated `_gsx.go`; never edit the generated file by hand — change the `.gsx` and run
-  `go generate ./...`.
-- Usecases hit the database, so run them in a goroutine and post the result back with
-  `app.EventQueue() <- func() { state.Set(...) }`. Never mutate `tui.State` from outside the
-  event loop.
-- App lifecycle in `main.go`: `app, err := tui.NewApp(tui.WithRootComponent(screen))`,
-  `defer app.Close()`, `app.Run()`. Quit keys call `ke.App().Stop()`.
-- Navigation between screens: `app.SetRootComponent(other)` from a key handler; pass an
-  `onDone` callback to the child screen so it can switch back (and reload) when finished.
-- Screen tests (package `main`) exercise components without a terminal: call the `KeyMap()`
-  bindings directly with `tui.KeyEvent{Key: tui.KeyRune, Rune: 'r'}` and assert on
-  `state.Get()`.
+- chi router (`github.com/go-chi/chi/v5`). One handler per entity
+  (`account_handler.go`, `movement_handler.go`) plus `router.go` with `NewRouter`.
+- Routes: `POST/GET /accounts`, `GET/PATCH/DELETE /accounts/{id}`, and nested
+  `POST/GET /accounts/{accountId}/movements`, `GET/PATCH/DELETE .../movements/{movementId}`.
+- Handlers depend on narrow interfaces matching the usecase `Execute` signatures
+  (satisfied by the usecase structs). Request/response are JSON wire types defined in
+  the handler file; money crosses the wire as a decimal string (`"25.99"`), converted
+  with `domain.ParseMoney` / `Money.String()`.
+- Error mapping: `ResourceNotFoundError` -> 404, invalid body/params -> 400,
+  anything else -> 500; error responses are `{"error": "..."}`.
+- **Handler tests use the same pattern as usecase tests**: build the real usecase with a
+  counterfeiter fake port (`account.NewCreateAccountUseCase(&usecasesfakes.FakeAccountCreator{}, logger)`),
+  inject it into the handler, drive requests with `httptest`, and assert on the port via
+  `XxxArgsForCall(0)` / `XxxReturns(...)`. Do not hand-write fake usecases.
 
-### dtos/ and app_errors/
+### api/dtos/ and api/app_errors/
 
 - DTOs are plain structs with `NewXxxDto(...)` constructors; read DTOs like
   `AccountDto` embed the domain entity.
@@ -98,19 +121,20 @@ app_errors/          shared error types (e.g. ResourceNotFoundError)
 2. Implement the minimum to make it pass.
 3. Refactor.
 
-Every entity, usecase and repository ships with tests; a feature is not done without them.
+Every entity, usecase, repository and handler ships with tests; a feature is not done
+without them.
 
-- Test files use the external test package (`package account_test`, `package domain_test`, ...),
+- Test files use the external test package (`package account_test`, `package rest_test`, ...),
   `testing` + `github.com/stretchr/testify/require`, and `t.Run` subtests per scenario
   (happy path + error path).
-- Usecase tests fake the ports with `usecasesfakes.FakeXxx`, set behavior with
+- Usecase and handler tests fake the ports with `usecasesfakes.FakeXxx`, set behavior with
   `XxxReturns(...)`, and assert calls with `XxxArgsForCall(0)`. Logger:
-  `slog.New(slog.NewTextHandler(os.Stdout, nil))`; ctx: `context.TODO()`.
+  `slog.New(slog.NewTextHandler(os.Stdout, nil))` (or `io.Discard` in handler tests); ctx: `context.TODO()`.
 - Repository tests run against in-memory SQLite using the `getInMemoryDatabase(t, logger)`
   helper in `adapters/database/database_test.go` (`sqlite.Open(":memory:")` + `AutoMigrate`).
 - Domain tests are plain unit tests.
 
-## Commands
+## Commands (run from `api/`)
 
 Verified with Go 1.27:
 
@@ -118,16 +142,16 @@ Verified with Go 1.27:
 go build ./...
 go test ./...
 go vet ./...
-go generate ./...   # regenerate counterfeiter fakes after changing ports,
-                    # and go-tui _gsx.go files after changing .gsx templates
+go generate ./...   # regenerate counterfeiter fakes after changing ports
+go run ./cmd        # serve the API on :8080 (SQLite file: tracker.db)
 ```
 
 ## Housekeeping
 
-- Schema changes happen in `adapters/database/models.go` (AutoMigrate). `SCHEMA.md` still
+- Schema changes happen in `api/adapters/database/models.go` (AutoMigrate). `SCHEMA.md` still
   describes the old Badger KV layout — update it when the schema changes.
-- `github.com/dgraph-io/badger` in go.mod and `adapters/database/connector.go` are legacy
-  (pre-SQLite); the composition root in `cmd` opens SQLite directly via
-  `gorm.Open(sqlite.Open("<file>"), ...)` + `AutoMigrate` (same pattern as
-  `getInMemoryDatabase` in the repository tests). Do not use Badger in new code.
+- `github.com/dgraph-io/badger` in `api/go.mod` and `api/adapters/database/connector.go` are legacy
+  (pre-SQLite); the composition root in `api/cmd` opens SQLite directly via
+  `gorm.Open(sqlite.Open("tracker.db"), ...)` + `AutoMigrate`. Do not use Badger in new code.
+- `*.db` files are gitignored.
 - Git: work on `main`, short imperative commit messages.
