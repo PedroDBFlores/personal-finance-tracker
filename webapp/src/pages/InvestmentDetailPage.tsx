@@ -2,12 +2,17 @@ import { createSignal, For, Show } from "solid-js";
 import { useParams } from "@solidjs/router";
 import type { Investment, InvestmentTransaction } from "../api";
 import { getInvestment, listInvestmentTransactions } from "../api";
-import { RouterLink } from "../components/RouterLink";
+import { RouterLink } from "../components/atoms/RouterLink";
+import { Badge } from "../components/atoms/Badge";
+import { EmptyState } from "../components/atoms/EmptyState";
+import { Loading } from "../components/atoms/Loading";
+import { ListRow } from "../components/molecules/ListRow";
+import { PageHeader } from "../components/molecules/PageHeader";
 
 export default function InvestmentDetailPage() {
   const params = useParams<{ id: string; investmentId: string }>();
   const [investment, setInvestment] = createSignal<Investment | null>(null);
-  const [transactions, setTransactions] = createSignal<InvestmentTransaction[]>([]);
+  const [transactions, setTransactions] = createSignal<InvestmentTransaction[] | null>(null);
   const [error, setError] = createSignal<string | null>(null);
 
   // the component body runs once on mount
@@ -29,19 +34,17 @@ export default function InvestmentDetailPage() {
 
   return (
     <div>
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-xl font-semibold">{investment() ? investment()!.name : "Investment"}</h2>
-        <RouterLink
-          to={`/accounts/${params.id}/investments/${params.investmentId}/transactions/new`}
-          class="btn-primary"
-        >
-          Add transaction
-        </RouterLink>
-      </div>
+      <PageHeader
+        title={investment() ? investment()!.name : "Investment"}
+        action={{
+          to: `/accounts/${params.id}/investments/${params.investmentId}/transactions/new`,
+          label: "Add transaction",
+        }}
+      />
       <Show when={investment()}>
         <div class="flex gap-2 items-center mb-4">
-          <span class="badge">{investment()!.type}</span>
-          <span class="badge badge-purple">{investment()!.currency}</span>
+          <Badge>{investment()!.type}</Badge>
+          <Badge tone="purple">{investment()!.currency}</Badge>
           <span class="font-medium">Current value: {investment()!.current_value}</span>
         </div>
       </Show>
@@ -52,24 +55,30 @@ export default function InvestmentDetailPage() {
       </Show>
       <div class="flex flex-col gap-2">
         <h3 class="text-lg font-semibold">Transactions</h3>
-        <ul class="flex flex-col gap-2">
-          <For each={transactions()}>
-            {(tx) => (
-              <li>
-                <div class="card flex justify-between items-center">
-                  <span class="font-medium">{tx.description || tx.type}</span>
-                  <span class="flex gap-2 items-center">
-                    <span class="badge">{tx.type}</span>
-                    <span>
-                      {tx.type === "Deposit" || tx.type === "Buy" ? "+" : tx.type === "Withdraw" || tx.type === "Sell" ? "-" : ""}
-                      {tx.type === "Deposit" || tx.type === "Withdraw" ? tx.amount : `${tx.quantity} @ ${tx.price}`}
-                    </span>
-                  </span>
-                </div>
-              </li>
-            )}
-          </For>
-        </ul>
+        <Show when={transactions()} fallback={<Loading label="Loading transactions..." />}>
+          {(list) => (
+            <Show when={list().length > 0} fallback={<EmptyState>No transactions yet</EmptyState>}>
+              <ul class="flex flex-col gap-2">
+                <For each={list()}>
+                  {(tx) => (
+                    <ListRow
+                      left={<span class="font-medium">{tx.description || tx.type}</span>}
+                      right={
+                        <>
+                          <Badge>{tx.type}</Badge>
+                          <span>
+                            {tx.type === "Deposit" || tx.type === "Buy" ? "+" : tx.type === "Withdraw" || tx.type === "Sell" ? "-" : ""}
+                            {tx.type === "Deposit" || tx.type === "Withdraw" ? tx.amount : `${tx.quantity} @ ${tx.price}`}
+                          </span>
+                        </>
+                      }
+                    />
+                  )}
+                </For>
+              </ul>
+            </Show>
+          )}
+        </Show>
         <RouterLink to={`/accounts/${params.id}`} class="link-muted self-start">
           Back to account
         </RouterLink>

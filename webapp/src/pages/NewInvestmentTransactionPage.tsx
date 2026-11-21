@@ -1,7 +1,8 @@
 import { createSignal, For, Show } from "solid-js";
 import { useNavigate, useParams } from "@solidjs/router";
 import { createInvestmentTransaction } from "../api";
-import { RouterLink } from "../components/RouterLink";
+import { RouterLink } from "../components/atoms/RouterLink";
+import { FormField } from "../components/molecules/FormField";
 
 const TRANSACTION_TYPES = ["Buy", "Sell", "Deposit", "Withdraw"];
 
@@ -47,10 +48,7 @@ export default function NewInvestmentTransactionPage() {
       <h2 class="text-xl font-semibold mb-4">New transaction</h2>
       <form onSubmit={submit}>
         <div class="flex flex-col gap-3">
-          <div>
-            <label class="block text-sm font-medium mb-1" for="tx-type">
-              Transaction type
-            </label>
+          <FormField id="tx-type" label="Transaction type">
             <select
               id="tx-type"
               aria-label="transaction type"
@@ -62,14 +60,11 @@ export default function NewInvestmentTransactionPage() {
                 {(t) => <option value={t}>{t}</option>}
               </For>
             </select>
-          </div>
+          </FormField>
           <Show
             when={isTrade()}
             fallback={
-              <div>
-                <label class="block text-sm font-medium mb-1" for="tx-amount">
-                  Amount
-                </label>
+              <FormField id="tx-amount" label="Amount">
                 <input
                   id="tx-amount"
                   aria-label="amount"
@@ -81,14 +76,11 @@ export default function NewInvestmentTransactionPage() {
                   value={amount()}
                   onInput={(e) => setAmount(e.currentTarget.value)}
                 />
-              </div>
+              </FormField>
             }
           >
             <div class="flex gap-3">
-              <div class="flex-1">
-                <label class="block text-sm font-medium mb-1" for="tx-quantity">
-                  Quantity
-                </label>
+              <FormField id="tx-quantity" label="Quantity" class="flex-1">
                 <input
                   id="tx-quantity"
                   aria-label="quantity"
@@ -100,11 +92,8 @@ export default function NewInvestmentTransactionPage() {
                   value={quantity()}
                   onInput={(e) => setQuantity(e.currentTarget.value)}
                 />
-              </div>
-              <div class="flex-1">
-                <label class="block text-sm font-medium mb-1" for="tx-price">
-                  Price
-                </label>
+              </FormField>
+              <FormField id="tx-price" label="Price" class="flex-1">
                 <input
                   id="tx-price"
                   aria-label="price"
@@ -116,13 +105,10 @@ export default function NewInvestmentTransactionPage() {
                   value={price()}
                   onInput={(e) => setPrice(e.currentTarget.value)}
                 />
-              </div>
+              </FormField>
             </div>
           </Show>
-          <div>
-            <label class="block text-sm font-medium mb-1" for="tx-description">
-              Description
-            </label>
+          <FormField id="tx-description" label="Description">
             <input
               id="tx-description"
               aria-label="description"
@@ -130,7 +116,7 @@ export default function NewInvestmentTransactionPage() {
               value={description()}
               onInput={(e) => setDescription(e.currentTarget.value)}
             />
-          </div>
+          </FormField>
           <Show when={error()}>
             <p role="alert" class="text-red-500">
               {error()}

@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+/* Brand palette: the app's primary color is orange. Components reference
+   brand-* utilities so the whole UI shares one palette. */
+@theme {
+  --color-brand-50: var(--color-orange-50);
+  --color-brand-100: var(--color-orange-100);
+  --color-brand-200: var(--color-orange-200);
+  --color-brand-300: var(--color-orange-300);
+  --color-brand-400: var(--color-orange-400);
+  --color-brand-500: var(--color-orange-500);
+  --color-brand-600: var(--color-orange-600);
+  --color-brand-700: var(--color-orange-700);
+  --color-brand-800: var(--color-orange-800);
+  --color-brand-900: var(--color-orange-900);
+  --color-brand-950: var(--color-orange-950);
+}
+
 :root {
   color-scheme: light dark;
 }
@@ -12,11 +28,11 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 rounded-md bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-50;
+    @apply px-4 py-2 rounded-md bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50;
   }
 
   .input {
-    @apply w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-teal-500;
+    @apply w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-brand-500;
   }
 
   .card {
@@ -40,7 +56,7 @@ body {
   }
 
   .link {
-    @apply text-teal-600 dark:text-teal-400 hover:underline;
+    @apply text-brand-600 dark:text-brand-400 hover:underline;
   }
 
   .link-muted {

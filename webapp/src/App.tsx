@@ -1,6 +1,6 @@
 import { createRouter } from "@solidjs/router";
 import type { RouteDefinition } from "@solidjs/router";
-import { RouterLink } from "./components/RouterLink";
+import { NavBar } from "./components/molecules/NavBar";
 import AccountsPage from "./pages/AccountsPage";
 import NewAccountPage from "./pages/NewAccountPage";
 import AccountDetailPage from "./pages/AccountDetailPage";
@@ -28,13 +28,11 @@ export function AppRoutes() {
 
 export default function App() {
   return (
-    <div class="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
-      <h1 class="text-3xl font-semibold">
-        <RouterLink to="/" class="hover:underline">
-          Personal Finance Tracker
-        </RouterLink>
-      </h1>
-      <AppRoutes />
+    <div>
+      <NavBar />
+      <main class="max-w-3xl mx-auto px-4 py-8">
+        <AppRoutes />
+      </main>
     </div>
   );
 }
