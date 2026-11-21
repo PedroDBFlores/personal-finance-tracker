@@ -38,7 +38,11 @@ func newAccountRouter(creator *usecasesfakes.FakeAccountCreator, getter *usecase
 }
 
 func sampleAccount() domain.Account {
-	return domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC))
+	acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC))
+	if err != nil {
+		panic(err)
+	}
+	return acc
 }
 
 func doRequest(t *testing.T, handler http.Handler, method, path string, body any) *httptest.ResponseRecorder {
@@ -221,15 +225,17 @@ func TestAccountHandlerBalance(t *testing.T) {
 
 		acc := sampleAccount()
 		getter.GetReturns(&acc, nil)
-		movements.ListReturns([]domain.Movement{
-			domain.NewMovement(1, "Salary", money("1000.00"), domain.MovementTypeCredit, now),
-			domain.NewMovement(1, "Groceries", money("25.99"), domain.MovementTypeDebit, now),
-		}, nil)
-		inv := domain.NewInvestment(2, 1, "Vanguard ETF", domain.ETF, domain.CurrencyEUR, now, nil)
+		salary, err := domain.NewMovement(1, "Salary", money("1000.00"), domain.MovementTypeCredit, now)
+		require.NoError(t, err)
+		groceries, err := domain.NewMovement(1, "Groceries", money("25.99"), domain.MovementTypeDebit, now)
+		require.NoError(t, err)
+		movements.ListReturns([]domain.Movement{salary, groceries}, nil)
+		inv, err := domain.NewInvestment(2, 1, "Vanguard ETF", domain.ETF, domain.CurrencyEUR, now, nil)
+		require.NoError(t, err)
 		investments.ListReturns([]domain.Investment{inv}, nil)
-		txs.ListReturns([]domain.InvestmentTransaction{
-			domain.NewInvestmentTransaction(10, 2, domain.Buy, 0, money("10.00"), money("100.00"), now, "Initial Buy"),
-		}, nil)
+		buy, err := domain.NewInvestmentTransaction(10, 2, domain.Buy, 0, money("10.00"), money("100.00"), now, "Initial Buy")
+		require.NoError(t, err)
+		txs.ListReturns([]domain.InvestmentTransaction{buy}, nil)
 
 		rec := doRequest(t, balanceRouter(getter, movements, investments, txs), http.MethodGet, "/accounts/1/balance", nil)
 
@@ -264,5 +270,27 @@ func TestAccountHandlerBalance(t *testing.T) {
 		rec := doRequest(t, r, http.MethodGet, "/accounts/abc/balance", nil)
 
 		require.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+}
+
+func TestAccountHandlerValidation(t *testing.T) {
+	t.Run("returns 400 for an unsupported account type", func(t *testing.T) {
+		creator := &usecasesfakes.FakeAccountCreator{}
+		r := newAccountRouter(creator, nil, nil, nil, nil, nil)
+
+		rec := doRequest(t, r, http.MethodPost, "/accounts", map[string]string{"name": "Bank A", "type": "Crypto", "currency": "EUR"})
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Equal(t, 0, creator.CreateCallCount())
+	})
+
+	t.Run("returns 400 for an unsupported currency", func(t *testing.T) {
+		creator := &usecasesfakes.FakeAccountCreator{}
+		r := newAccountRouter(creator, nil, nil, nil, nil, nil)
+
+		rec := doRequest(t, r, http.MethodPost, "/accounts", map[string]string{"name": "Bank A", "type": "Bank", "currency": "BTC"})
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Equal(t, 0, creator.CreateCallCount())
 	})
 }

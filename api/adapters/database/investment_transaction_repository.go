@@ -71,7 +71,10 @@ func (r *InvestmentTransactionRepository) Get(ctx context.Context, accountId dom
 	if tx, err := gorm.G[InvestmentTransaction](r.db).Where("id = ? AND investment_id = ? AND "+accountScope, id, investmentId, accountId).First(ctx); err != nil {
 		return nil, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String())
 	} else {
-		transaction := dbInvestmentTransactionToDomainInvestmentTransaction(tx)
+		transaction, err := dbInvestmentTransactionToDomainInvestmentTransaction(tx)
+		if err != nil {
+			return nil, err
+		}
 		return &transaction, nil
 	}
 }
@@ -83,7 +86,11 @@ func (r *InvestmentTransactionRepository) List(ctx context.Context, accountId do
 	}
 	modelTransactions := make([]domain.InvestmentTransaction, 0, len(transactions))
 	for _, tx := range transactions {
-		modelTransactions = append(modelTransactions, dbInvestmentTransactionToDomainInvestmentTransaction(tx))
+		t, err := dbInvestmentTransactionToDomainInvestmentTransaction(tx)
+		if err != nil {
+			return nil, err
+		}
+		modelTransactions = append(modelTransactions, t)
 	}
 	return modelTransactions, nil
 }
@@ -97,8 +104,8 @@ func (r *InvestmentTransactionRepository) Delete(ctx context.Context, accountId 
 	return nil
 }
 
-func dbInvestmentTransactionToDomainInvestmentTransaction(t InvestmentTransaction) domain.InvestmentTransaction {
-	d := domain.NewInvestmentTransaction(
+func dbInvestmentTransactionToDomainInvestmentTransaction(t InvestmentTransaction) (domain.InvestmentTransaction, error) {
+	return domain.NewInvestmentTransaction(
 		domain.Id(t.ID),
 		domain.Id(t.InvestmentId),
 		t.Type,
@@ -108,7 +115,6 @@ func dbInvestmentTransactionToDomainInvestmentTransaction(t InvestmentTransactio
 		t.Date,
 		t.Description,
 	)
-	return d
 }
 
 func domainInvestmentTransactionToDBInvestmentTransaction(t domain.InvestmentTransaction) InvestmentTransaction {

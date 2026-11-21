@@ -56,3 +56,21 @@ func TestCreateAccountUseCase(t *testing.T) {
 		require.Nil(t, id)
 	})
 }
+
+func TestCreateAccountUseCaseValidation(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	ctx := context.TODO()
+
+	t.Run("returns a ValidationError for an unsupported account type", func(t *testing.T) {
+		creator := usecasesfakes.FakeAccountCreator{}
+		useCase := account.NewCreateAccountUseCase(&creator, logger)
+
+		dto := dtos.NewCreateAccountDto("Bank A", domain.AccountType("Crypto"), domain.CurrencyEUR, time.Now())
+		result, err := useCase.Execute(ctx, dto)
+
+		var ve domain.ValidationError
+		require.ErrorAs(t, err, &ve)
+		require.Nil(t, result)
+		require.Equal(t, 0, creator.CreateCallCount())
+	})
+}

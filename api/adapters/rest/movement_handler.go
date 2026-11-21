@@ -133,7 +133,11 @@ func (h *MovementHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeUsecaseError(w, err)
 		return
 	}
-	mov := domain.NewMovement(accountId, req.Description, value, domain.MovementType(req.Type), dto.Date)
+	mov, err := domain.NewMovement(accountId, req.Description, value, domain.MovementType(req.Type), dto.Date)
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
 	mov.Id = *id
 	writeJSON(w, http.StatusCreated, toMovementResponse(dtos.NewMovementDto(mov)))
 }

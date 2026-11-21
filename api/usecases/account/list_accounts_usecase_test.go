@@ -21,10 +21,11 @@ func TestListAccountsUseCase(t *testing.T) {
 
 	t.Run("returns a list of accounts", func(t *testing.T) {
 		accountLister := usecasesfakes.FakeAccountLister{}
-		listAccounts := []domain.Account{
-			domain.NewAccount(domain.NewId(), "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, time.Now()),
-			domain.NewAccount(domain.NewId(), "Credit Card B", domain.AccountTypeCreditCard, domain.CurrencyEUR, time.Now()),
-		}
+		bankA, err := domain.NewAccount(domain.NewId(), "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, time.Now())
+		require.NoError(t, err)
+		creditCardB, err := domain.NewAccount(domain.NewId(), "Credit Card B", domain.AccountTypeCreditCard, domain.CurrencyEUR, time.Now())
+		require.NoError(t, err)
+		listAccounts := []domain.Account{bankA, creditCardB}
 		var listAccountDtos []dtos.AccountDto
 		for _, account := range listAccounts {
 			listAccountDtos = append(listAccountDtos, dtos.NewAccountDto(account))

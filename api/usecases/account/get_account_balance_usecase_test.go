@@ -33,29 +33,33 @@ func TestGetAccountBalanceUseCase(t *testing.T) {
 		investmentLister := &usecasesfakes.FakeInvestmentLister{}
 		txLister := &usecasesfakes.FakeInvestmentTransactionLister{}
 
-		acc := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now)
+		acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now); require.NoError(t, err)
 		accountGetter.GetReturns(&acc, nil)
 
-		movementLister.ListReturns([]domain.Movement{
-			domain.NewMovement(1, "Salary", mustMoney(t, "1000.00"), domain.MovementTypeCredit, now),
-			domain.NewMovement(1, "Groceries", mustMoney(t, "25.99"), domain.MovementTypeDebit, now),
-		}, nil)
+		salary, err := domain.NewMovement(1, "Salary", mustMoney(t, "1000.00"), domain.MovementTypeCredit, now)
+		require.NoError(t, err)
+		groceries, err := domain.NewMovement(1, "Groceries", mustMoney(t, "25.99"), domain.MovementTypeDebit, now)
+		require.NoError(t, err)
+		movementLister.ListReturns([]domain.Movement{salary, groceries}, nil)
 
-		etf := domain.NewInvestment(2, 1, "Vanguard ETF", domain.ETF, domain.CurrencyEUR, now, nil)
-		savings := domain.NewInvestment(3, 1, "Savings", domain.Savings, domain.CurrencyEUR, now, nil)
+		etf, err := domain.NewInvestment(2, 1, "Vanguard ETF", domain.ETF, domain.CurrencyEUR, now, nil)
+		require.NoError(t, err)
+		savings, err := domain.NewInvestment(3, 1, "Savings", domain.Savings, domain.CurrencyEUR, now, nil)
+		require.NoError(t, err)
 		investmentLister.ListReturns([]domain.Investment{etf, savings}, nil)
 
+		buy, err := domain.NewInvestmentTransaction(10, 2, domain.Buy, 0, mustMoney(t, "10.00"), mustMoney(t, "100.00"), now, "Initial Buy")
+		require.NoError(t, err)
+		deposit, err := domain.NewInvestmentTransaction(11, 3, domain.Deposit, mustMoney(t, "500.00"), 0, 0, now, "")
+		require.NoError(t, err)
+		withdraw, err := domain.NewInvestmentTransaction(12, 3, domain.Withdraw, mustMoney(t, "100.00"), 0, 0, now, "")
+		require.NoError(t, err)
 		txLister.ListStub = func(_ context.Context, _ domain.Id, investmentId domain.Id) ([]domain.InvestmentTransaction, error) {
 			switch investmentId {
 			case 2:
-				return []domain.InvestmentTransaction{
-					domain.NewInvestmentTransaction(10, 2, domain.Buy, 0, mustMoney(t, "10.00"), mustMoney(t, "100.00"), now, "Initial Buy"),
-				}, nil
+				return []domain.InvestmentTransaction{buy}, nil
 			case 3:
-				return []domain.InvestmentTransaction{
-					domain.NewInvestmentTransaction(11, 3, domain.Deposit, mustMoney(t, "500.00"), 0, 0, now, ""),
-					domain.NewInvestmentTransaction(12, 3, domain.Withdraw, mustMoney(t, "100.00"), 0, 0, now, ""),
-				}, nil
+				return []domain.InvestmentTransaction{deposit, withdraw}, nil
 			}
 			return nil, nil
 		}
@@ -87,7 +91,7 @@ func TestGetAccountBalanceUseCase(t *testing.T) {
 		investmentLister := &usecasesfakes.FakeInvestmentLister{}
 		txLister := &usecasesfakes.FakeInvestmentTransactionLister{}
 
-		acc := domain.NewAccount(1, "Empty", domain.AccountTypeBank, domain.CurrencyUSD, now)
+		acc, err := domain.NewAccount(1, "Empty", domain.AccountTypeBank, domain.CurrencyUSD, now); require.NoError(t, err)
 		accountGetter.GetReturns(&acc, nil)
 		movementLister.ListReturns([]domain.Movement{}, nil)
 		investmentLister.ListReturns([]domain.Investment{}, nil)
@@ -125,7 +129,7 @@ func TestGetAccountBalanceUseCase(t *testing.T) {
 		investmentLister := &usecasesfakes.FakeInvestmentLister{}
 		txLister := &usecasesfakes.FakeInvestmentTransactionLister{}
 
-		acc := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now)
+		acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now); require.NoError(t, err)
 		accountGetter.GetReturns(&acc, nil)
 		movementLister.ListReturns(nil, errors.New("db down"))
 

@@ -32,13 +32,14 @@ func TestMovementRepository(t *testing.T) {
 		accountId, err := accRepo.Create(ctx, baseAccount)
 		require.NoError(t, err)
 		repo := database.NewMovementRepository(db)
-		movement := domain.NewMovement(
+		movement, err := domain.NewMovement(
 			*accountId,
 			"Test Movement",
 			domain.Money(1000),
 			domain.MovementTypeDebit,
 			time.Now(),
 		)
+		require.NoError(t, err)
 		id, err := repo.Create(ctx, *accountId, movement)
 		require.NoError(t, err)
 		require.Greater(t, *id, uint(0))
@@ -60,13 +61,14 @@ func TestMovementRepository(t *testing.T) {
 			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
-			movement := domain.NewMovement(
+			movement, err := domain.NewMovement(
 				*accountId,
 				"Test Movement",
 				domain.Money(1000),
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
+			require.NoError(t, err)
 			id, err := repo.Create(ctx, *accountId, movement)
 			require.NoError(t, err)
 
@@ -98,7 +100,7 @@ func TestMovementRepository(t *testing.T) {
 			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
-			movement := domain.NewMovement(*accountId, "Test Movement", domain.Money(1000), domain.MovementTypeDebit, time.Now())
+			movement, err := domain.NewMovement(*accountId, "Test Movement", domain.Money(1000), domain.MovementTypeDebit, time.Now()); require.NoError(t, err)
 			id, err := repo.Create(ctx, *accountId, movement)
 			require.NoError(t, err)
 
@@ -116,13 +118,14 @@ func TestMovementRepository(t *testing.T) {
 			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
-			movement := domain.NewMovement(
+			movement, err := domain.NewMovement(
 				*accountId,
 				"Test Movement",
 				domain.Money(1000),
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
+			require.NoError(t, err)
 			id, err := repo.Create(ctx, *accountId, movement)
 			require.NoError(t, err)
 
@@ -165,22 +168,24 @@ func TestMovementRepository(t *testing.T) {
 		accountId, err := accRepo.Create(ctx, baseAccount)
 		require.NoError(t, err)
 		repo := database.NewMovementRepository(db)
-		firstMovement := domain.NewMovement(
+		firstMovement, err := domain.NewMovement(
 			*accountId,
 			"Test Movement",
 			domain.Money(1000),
 			domain.MovementTypeDebit,
 			time.Now(),
 		)
+		require.NoError(t, err)
 		firstId, err := repo.Create(ctx, *accountId, firstMovement)
 		require.NoError(t, err)
-		secondMovement := domain.NewMovement(
+		secondMovement, err := domain.NewMovement(
 			*accountId,
 			"Test Movement 2",
 			domain.Money(10000),
 			domain.MovementTypeCredit,
 			time.Now(),
 		)
+		require.NoError(t, err)
 		secondId, err := repo.Create(ctx, *accountId, secondMovement)
 		require.NoError(t, err)
 
@@ -203,13 +208,14 @@ func TestMovementRepository(t *testing.T) {
 			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
-			movement := domain.NewMovement(
+			movement, err := domain.NewMovement(
 				*accountId,
 				"Test Movement",
 				domain.Money(1000),
 				domain.MovementTypeDebit,
 				time.Now(),
 			)
+			require.NoError(t, err)
 			id, err := repo.Create(ctx, *accountId, movement)
 			require.NoError(t, err)
 
@@ -239,7 +245,7 @@ func TestMovementRepository(t *testing.T) {
 			accountId, err := accRepo.Create(ctx, baseAccount)
 			require.NoError(t, err)
 			repo := database.NewMovementRepository(db)
-			movement := domain.NewMovement(*accountId, "Test Movement", domain.Money(1000), domain.MovementTypeDebit, time.Now())
+			movement, err := domain.NewMovement(*accountId, "Test Movement", domain.Money(1000), domain.MovementTypeDebit, time.Now()); require.NoError(t, err)
 			id, err := repo.Create(ctx, *accountId, movement)
 			require.NoError(t, err)
 
@@ -274,7 +280,9 @@ func TestMovementRepositoryMonths(t *testing.T) {
 			time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC),
 		}
 		for i, d := range dates {
-			_, err := repo.Create(ctx, *accountId, domain.NewMovement(*accountId, fmt.Sprintf("m%d", i), domain.Money(100), domain.MovementTypeCredit, d))
+			m, err := domain.NewMovement(*accountId, fmt.Sprintf("m%d", i), domain.Money(100), domain.MovementTypeCredit, d)
+			require.NoError(t, err)
+			_, err = repo.Create(ctx, *accountId, m)
 			require.NoError(t, err)
 		}
 
@@ -313,11 +321,17 @@ func TestMovementRepositoryMonths(t *testing.T) {
 		})
 		require.NoError(t, err)
 		repo := database.NewMovementRepository(db)
-		_, err = repo.Create(ctx, *accountId, domain.NewMovement(*accountId, "Jan 20", domain.Money(200), domain.MovementTypeCredit, time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC)))
+		jan20, err := domain.NewMovement(*accountId, "Jan 20", domain.Money(200), domain.MovementTypeCredit, time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC))
 		require.NoError(t, err)
-		_, err = repo.Create(ctx, *accountId, domain.NewMovement(*accountId, "Jan 10", domain.Money(100), domain.MovementTypeDebit, time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)))
+		_, err = repo.Create(ctx, *accountId, jan20)
 		require.NoError(t, err)
-		_, err = repo.Create(ctx, *accountId, domain.NewMovement(*accountId, "Feb", domain.Money(300), domain.MovementTypeCredit, time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)))
+		jan10, err := domain.NewMovement(*accountId, "Jan 10", domain.Money(100), domain.MovementTypeDebit, time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC))
+		require.NoError(t, err)
+		_, err = repo.Create(ctx, *accountId, jan10)
+		require.NoError(t, err)
+		feb, err := domain.NewMovement(*accountId, "Feb", domain.Money(300), domain.MovementTypeCredit, time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC))
+		require.NoError(t, err)
+		_, err = repo.Create(ctx, *accountId, feb)
 		require.NoError(t, err)
 
 		movements, err := repo.ListByMonth(ctx, *accountId, 2025, 1)
@@ -337,7 +351,9 @@ func TestMovementRepositoryMonths(t *testing.T) {
 		})
 		require.NoError(t, err)
 		repo := database.NewMovementRepository(db)
-		_, err = repo.Create(ctx, *accountId, domain.NewMovement(*accountId, "Jan", domain.Money(100), domain.MovementTypeCredit, time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)))
+		jan, err := domain.NewMovement(*accountId, "Jan", domain.Money(100), domain.MovementTypeCredit, time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC))
+		require.NoError(t, err)
+		_, err = repo.Create(ctx, *accountId, jan)
 		require.NoError(t, err)
 
 		movements, err := repo.ListByMonth(ctx, *accountId, 2025, 6)

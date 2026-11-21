@@ -29,7 +29,11 @@ func newInvestmentRouter(creator *usecasesfakes.FakeInvestmentCreator, getter *u
 }
 
 func sampleInvestment(accountId domain.Id, id domain.Id) domain.Investment {
-	return domain.NewInvestment(id, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC), nil)
+	inv, err := domain.NewInvestment(id, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC), nil)
+	if err != nil {
+		panic(err)
+	}
+	return inv
 }
 
 func TestInvestmentHandlerCreate(t *testing.T) {
@@ -87,7 +91,7 @@ func TestInvestmentHandlerGet(t *testing.T) {
 		investmentId := domain.NewId()
 		inv := sampleInvestment(2, investmentId)
 		getter.GetReturns(&inv, nil)
-		buy := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
+		buy, err := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy"); require.NoError(t, err)
 		txLister.ListReturns([]domain.InvestmentTransaction{buy}, nil)
 		r := newInvestmentRouter(nil, getter, nil, nil, nil, txLister)
 

@@ -59,7 +59,10 @@ func (r *MovementRepository) Get(ctx context.Context, accountId, id domain.Id) (
 	if mov, err := gorm.G[Movement](r.db).Where("id = ? AND account_id = ?", id, accountId).First(ctx); err != nil {
 		return nil, app_errors.NewResourceNotFoundError("Movement", id.String())
 	} else {
-		movement := dbMovementToDomainMovement(mov)
+		movement, err := dbMovementToDomainMovement(mov)
+		if err != nil {
+			return nil, err
+		}
 		return &movement, nil
 	}
 }
@@ -71,7 +74,11 @@ func (r *MovementRepository) List(ctx context.Context, accountId domain.Id) ([]d
 	}
 	var modelMovements []domain.Movement
 	for _, movements := range movements {
-		modelMovements = append(modelMovements, dbMovementToDomainMovement(movements))
+		m, err := dbMovementToDomainMovement(movements)
+		if err != nil {
+			return nil, err
+		}
+		modelMovements = append(modelMovements, m)
 	}
 
 	return modelMovements, nil
@@ -110,7 +117,11 @@ func (r *MovementRepository) ListByMonth(ctx context.Context, accountId domain.I
 	}
 	result := make([]domain.Movement, 0, len(movements))
 	for _, m := range movements {
-		result = append(result, dbMovementToDomainMovement(m))
+		dm, err := dbMovementToDomainMovement(m)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, dm)
 	}
 	return result, nil
 }
@@ -124,16 +135,19 @@ func (r *MovementRepository) Delete(ctx context.Context, accountId, id domain.Id
 	return nil
 }
 
-func dbMovementToDomainMovement(m Movement) domain.Movement {
-	d := domain.NewMovement(
+func dbMovementToDomainMovement(m Movement) (domain.Movement, error) {
+	d, err := domain.NewMovement(
 		domain.Id(m.AccountId),
 		m.Description,
 		m.Value,
 		m.MovementType,
 		m.Date,
 	)
+	if err != nil {
+		return domain.Movement{}, err
+	}
 	d.Id = domain.Id(m.ID)
-	return d
+	return d, nil
 }
 
 func domainMovementToDBMovement(m domain.Movement) Movement {

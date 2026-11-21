@@ -33,7 +33,10 @@ func newMovementRouter(creator *usecasesfakes.FakeMovementCreator, getter *useca
 }
 
 func sampleMovement(accountId domain.Id) domain.Movement {
-	m := domain.NewMovement(accountId, "Salary", domain.Money(100000), domain.MovementTypeCredit, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC))
+	m, err := domain.NewMovement(accountId, "Salary", domain.Money(100000), domain.MovementTypeCredit, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC))
+	if err != nil {
+		panic(err)
+	}
 	m.Id = 1
 	return m
 }
@@ -201,7 +204,7 @@ func TestMovementHandlerMonths(t *testing.T) {
 	}
 	existingAccount := func() *usecasesfakes.FakeAccountGetter {
 		g := &usecasesfakes.FakeAccountGetter{}
-		acc := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC))
+		acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC)); require.NoError(t, err)
 		g.GetReturns(&acc, nil)
 		return g
 	}
@@ -274,5 +277,31 @@ func TestMovementHandlerMonths(t *testing.T) {
 		rec := doRequest(t, r, http.MethodGet, "/accounts/9/movements/by-month/2024/1", nil)
 
 		require.Equal(t, http.StatusNotFound, rec.Code)
+	})
+}
+
+func TestMovementHandlerValidation(t *testing.T) {
+	t.Run("returns 400 for an unsupported movement type", func(t *testing.T) {
+		creator := &usecasesfakes.FakeMovementCreator{}
+		r := newMovementRouter(creator, nil, nil, nil, nil, nil, nil)
+
+		rec := doRequest(t, r, http.MethodPost, "/accounts/1/movements", map[string]string{
+			"description": "Salary", "value": "1000.00", "type": "Transfer",
+		})
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Equal(t, 0, creator.CreateCallCount())
+	})
+
+	t.Run("returns 400 for a negative value", func(t *testing.T) {
+		creator := &usecasesfakes.FakeMovementCreator{}
+		r := newMovementRouter(creator, nil, nil, nil, nil, nil, nil)
+
+		rec := doRequest(t, r, http.MethodPost, "/accounts/1/movements", map[string]string{
+			"description": "Refund", "value": "-10.00", "type": "Debit",
+		})
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Equal(t, 0, creator.CreateCallCount())
 	})
 }

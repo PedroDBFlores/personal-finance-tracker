@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strings"
 	"time"
 )
 
@@ -18,15 +19,30 @@ type Account struct {
 	CreatedAt time.Time
 }
 
-// NewAccount creates a new Account based on the provided parameters
-func NewAccount(id Id, name string, accountType AccountType, currency Currency, createdAt time.Time) Account {
+// NewAccount creates a new Account based on the provided parameters.
+// It returns a ValidationError if the name is empty, the account type is not
+// supported, or the currency is not supported.
+func NewAccount(id Id, name string, accountType AccountType, currency Currency, createdAt time.Time) (Account, error) {
+	if strings.TrimSpace(name) == "" {
+		return Account{}, newValidationError("account name is required")
+	}
+	switch accountType {
+	case AccountTypeBank, AccountTypeBrokerage, AccountTypeCreditCard:
+	default:
+		return Account{}, newValidationError("unsupported account type %q", accountType)
+	}
+	switch currency {
+	case CurrencyUSD, CurrencyEUR, CurrencyGBP:
+	default:
+		return Account{}, newValidationError("unsupported currency %q", currency)
+	}
 	return Account{
 		Id:        id,
 		Name:      name,
 		Type:      accountType,
 		Currency:  currency,
 		CreatedAt: createdAt,
-	}
+	}, nil
 }
 
 // AccountPatch represents the fields to modify on an Account. Nil fields are left unchanged.

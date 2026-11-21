@@ -22,7 +22,7 @@ func TestListInvestmentTransactionsUseCase(t *testing.T) {
 
 	t.Run("lists transactions of an investment", func(t *testing.T) {
 		lister := usecasesfakes.FakeInvestmentTransactionLister{}
-		tx := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
+		tx, err := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy"); require.NoError(t, err)
 		lister.ListReturns([]domain.InvestmentTransaction{tx}, nil)
 		useCase := investmenttransaction.NewListInvestmentTransactionsUseCase(&lister, logger)
 

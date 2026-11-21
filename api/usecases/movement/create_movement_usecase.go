@@ -19,7 +19,10 @@ func NewCreateMovementUseCase(creator usecases.MovementCreator, logger *slog.Log
 }
 
 func (u *CreateMovementUseCase) Execute(ctx context.Context, accountId domain.Id, dto dtos.CreateMovementDto) (*domain.Id, error) {
-	movement := domain.NewMovement(accountId, dto.Description, dto.Value, dto.Type, dto.Date)
+	movement, err := domain.NewMovement(accountId, dto.Description, dto.Value, dto.Type, dto.Date)
+	if err != nil {
+		return nil, err
+	}
 	u.logger.DebugContext(ctx, "calling movement creator", slog.Any("movement", movement))
 	return u.creator.Create(ctx, accountId, movement)
 }

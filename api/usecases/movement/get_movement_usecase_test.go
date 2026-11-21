@@ -22,7 +22,7 @@ func TestGetMovementUseCase(t *testing.T) {
 
 	t.Run("gets a movement by id", func(t *testing.T) {
 		getter := usecasesfakes.FakeMovementGetter{}
-		mov := domain.NewMovement(accountId, "Groceries", domain.Money(2599), domain.MovementTypeDebit, time.Now())
+		mov, err := domain.NewMovement(accountId, "Groceries", domain.Money(2599), domain.MovementTypeDebit, time.Now()); require.NoError(t, err)
 		mov.Id = domain.NewId()
 		getter.GetReturns(&mov, nil)
 		useCase := movement.NewGetMovementUseCase(&getter, logger)
