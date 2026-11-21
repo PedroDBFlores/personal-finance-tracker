@@ -184,6 +184,18 @@ go generate ./...   # regenerate counterfeiter fakes after changing ports
 go run ./cmd        # serve the API on :8080 (SQLite file: tracker.db)
 ```
 
+## Tracking — GitHub Projects
+
+- Work on this repo is tracked in the GitHub Project **"Personal Finance Tracker"**
+  (use `gh project list --owner PedroDBFlores` to find it, then `gh project item-list`
+  / `gh project item-add` / `gh project item-edit` to manage items).
+- This needs the **`gh` CLI installed and authenticated** (`gh auth status`), with the
+  `read:project` (and `project` for writes) token scopes — if missing, run
+  `gh auth refresh -s read:project -s project`.
+  When asked about project-level status on GitHub, use `gh project ...` commands —
+  and if `gh` is not installed, not logged in, or lacks the project scopes, say so
+  explicitly instead of guessing.
+
 ## Housekeeping
 
 - Schema changes happen in `api/adapters/database/models.go` (AutoMigrate).
