@@ -20,11 +20,19 @@ webapp/              SolidJS webapp — consumes the api over HTTP
 
 ```
 webapp/src/api.ts        typed API client (fetch wrapper, ApiError with status, base URL from VITE_API_URL)
-webapp/src/App.tsx      routes table (createRouter route definitions) + AppRoutes + default App (layout)
+webapp/src/App.tsx      routes table (createRouter route definitions) + AppRoutes + default App (layout: NavBar + <main>)
 webapp/src/pages/        one page component per route (AccountsPage, NewAccountPage, AccountDetailPage, NewMovementPage, ...)
-webapp/src/components/RouterLink.tsx  <a href> wrapper: the Solid router intercepts plain anchor clicks
-webapp/src/index.css     Tailwind CSS v4 (@import "tailwindcss") + @layer component classes (btn-primary, input, card, badge, link)
-webapp/src/*.test.ts(x)  vitest tests (jsdom); api client tests mock fetch, component tests mock ./api
+webapp/src/components/  UI components organized by atomic design (https://atomicdesign.bradfrost.com/chapter-2/):
+  components/atoms/      single-purpose building blocks: RouterLink (<a href> wrapper — the Solid router
+                         intercepts plain anchor clicks), Badge, Loading, EmptyState
+  components/molecules/  small composed units: NavBar (orange top bar, app name left), PageHeader
+                         (title left + primary action right), ListRow (card row, content left / pills right,
+                         flex justify-between), FormField (label + input wrapper)
+  components/organisms/  page-level compositions: AccountList (account rows + empty state)
+  Each component has its own colocated <Name>.test.tsx.
+webapp/src/index.css     Tailwind CSS v4 (@import "tailwindcss") + @theme brand palette (brand-* = orange, the app's
+                         primary color) + @layer component classes (btn-primary, input, card, badge, link)
+webapp/src/**/*.test.ts(x)  vitest tests (jsdom); api client tests mock fetch, component tests mock ../api
 ```
 
 - **Routing: @solidjs/router v2.** `App.tsx` exports the `routes` table; `AppRoutes` mounts
@@ -35,7 +43,7 @@ webapp/src/*.test.ts(x)  vitest tests (jsdom); api client tests mock fetch, comp
   `/accounts/:id/investments/:investmentId` investment detail with transactions,
   `/accounts/:id/investments/:investmentId/transactions/new` create transaction.
   There is no `<Route>`/`A` component in router v2: routes are plain objects with `path` +
-  `component`, and links are plain anchors — use `RouterLink` (`src/components/RouterLink.tsx`,
+  `component`, and links are plain anchors — use `RouterLink` (`src/components/atoms/RouterLink.tsx`,
   maps `to` to `href`). Navigate with `useNavigate`; page params via `useParams`.
   In tests, mount the exported `routes` with a memory history:
   `createRouter({ routes, history: memoryHistory(path) })`.

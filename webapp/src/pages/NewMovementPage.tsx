@@ -1,7 +1,8 @@
 import { createSignal, For, Show } from "solid-js";
 import { useNavigate, useParams } from "@solidjs/router";
 import { createMovement } from "../api";
-import { RouterLink } from "../components/RouterLink";
+import { RouterLink } from "../components/atoms/RouterLink";
+import { FormField } from "../components/molecules/FormField";
 
 const MOVEMENT_TYPES = ["Credit", "Debit"];
 
@@ -33,10 +34,7 @@ export default function NewMovementPage() {
       <h2 class="text-xl font-semibold mb-4">New movement</h2>
       <form onSubmit={submit}>
         <div class="flex flex-col gap-3">
-          <div>
-            <label class="block text-sm font-medium mb-1" for="movement-description">
-              Description
-            </label>
+          <FormField id="movement-description" label="Description">
             <input
               id="movement-description"
               aria-label="description"
@@ -45,12 +43,9 @@ export default function NewMovementPage() {
               value={description()}
               onInput={(e) => setDescription(e.currentTarget.value)}
             />
-          </div>
+          </FormField>
           <div class="flex gap-3">
-            <div class="flex-1">
-              <label class="block text-sm font-medium mb-1" for="movement-amount">
-                Amount
-              </label>
+            <FormField id="movement-amount" label="Amount" class="flex-1">
               <input
                 id="movement-amount"
                 aria-label="amount"
@@ -62,11 +57,8 @@ export default function NewMovementPage() {
                 value={amount()}
                 onInput={(e) => setAmount(e.currentTarget.value)}
               />
-            </div>
-            <div class="flex-1">
-              <label class="block text-sm font-medium mb-1" for="movement-type">
-                Movement type
-              </label>
+            </FormField>
+            <FormField id="movement-type" label="Movement type" class="flex-1">
               <select
                 id="movement-type"
                 aria-label="movement type"
@@ -78,7 +70,7 @@ export default function NewMovementPage() {
                   {(t) => <option value={t}>{t}</option>}
                 </For>
               </select>
-            </div>
+            </FormField>
           </div>
           <Show when={error()}>
             <p role="alert" class="text-red-500">

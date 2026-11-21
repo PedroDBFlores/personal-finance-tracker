@@ -2,13 +2,18 @@ import { createSignal, For, Show } from "solid-js";
 import { useParams } from "@solidjs/router";
 import type { Account, Investment, Movement } from "../api";
 import { getAccount, listInvestments, listMovements } from "../api";
-import { RouterLink } from "../components/RouterLink";
+import { RouterLink } from "../components/atoms/RouterLink";
+import { Badge } from "../components/atoms/Badge";
+import { EmptyState } from "../components/atoms/EmptyState";
+import { Loading } from "../components/atoms/Loading";
+import { ListRow } from "../components/molecules/ListRow";
+import { PageHeader } from "../components/molecules/PageHeader";
 
 export default function AccountDetailPage() {
   const params = useParams<{ id: string }>();
   const [account, setAccount] = createSignal<Account | null>(null);
-  const [movements, setMovements] = createSignal<Movement[]>([]);
-  const [investments, setInvestments] = createSignal<Investment[]>([]);
+  const [movements, setMovements] = createSignal<Movement[] | null>(null);
+  const [investments, setInvestments] = createSignal<Investment[] | null>(null);
   const [error, setError] = createSignal<string | null>(null);
 
   // the component body runs once on mount
@@ -28,16 +33,14 @@ export default function AccountDetailPage() {
 
   return (
     <div>
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-xl font-semibold">{account() ? account()!.name : "Account"}</h2>
-        <RouterLink to={`/accounts/${params.id}/movements/new`} class="btn-primary">
-          Add movement
-        </RouterLink>
-      </div>
+      <PageHeader
+        title={account() ? account()!.name : "Account"}
+        action={{ to: `/accounts/${params.id}/movements/new`, label: "Add movement" }}
+      />
       <Show when={account()}>
         <div class="flex gap-2 mb-4">
-          <span class="badge">{account()!.type}</span>
-          <span class="badge badge-purple">{account()!.currency}</span>
+          <Badge>{account()!.type}</Badge>
+          <Badge tone="purple">{account()!.currency}</Badge>
         </div>
       </Show>
       <Show when={error()}>
@@ -47,24 +50,30 @@ export default function AccountDetailPage() {
       </Show>
       <div class="flex flex-col gap-2">
         <h3 class="text-lg font-semibold">Movements</h3>
-        <ul class="flex flex-col gap-2">
-          <For each={movements()}>
-            {(m) => (
-              <li>
-                <div class="card flex justify-between items-center">
-                  <span class="font-medium">{m.description}</span>
-                  <span class="flex gap-2 items-center">
-                    <span class={m.type === "Credit" ? "badge badge-green" : "badge badge-red"}>{m.type}</span>
-                    <span>
-                      {m.type === "Debit" ? "-" : "+"}
-                      {m.value}
-                    </span>
-                  </span>
-                </div>
-              </li>
-            )}
-          </For>
-        </ul>
+        <Show when={movements()} fallback={<Loading label="Loading movements..." />}>
+          {(list) => (
+            <Show when={list().length > 0} fallback={<EmptyState>No movements yet</EmptyState>}>
+              <ul class="flex flex-col gap-2">
+                <For each={list()}>
+                  {(m) => (
+                    <ListRow
+                      left={<span class="font-medium">{m.description}</span>}
+                      right={
+                        <>
+                          <Badge tone={m.type === "Credit" ? "green" : "red"}>{m.type}</Badge>
+                          <span>
+                            {m.type === "Debit" ? "-" : "+"}
+                            {m.value}
+                          </span>
+                        </>
+                      }
+                    />
+                  )}
+                </For>
+              </ul>
+            </Show>
+          )}
+        </Show>
         <RouterLink to="/" class="link-muted self-start">
           Back to accounts
         </RouterLink>
@@ -76,23 +85,31 @@ export default function AccountDetailPage() {
             New investment
           </RouterLink>
         </div>
-        <ul class="flex flex-col gap-2">
-          <For each={investments()}>
-            {(inv) => (
-              <li>
-                <div class="card flex justify-between items-center">
-                  <RouterLink to={`/accounts/${params.id}/investments/${inv.id}`} class="link font-medium">
-                    {inv.name}
-                  </RouterLink>
-                  <span class="flex gap-2 items-center">
-                    <span class="badge">{inv.type}</span>
-                    <span>{inv.current_value}</span>
-                  </span>
-                </div>
-              </li>
-            )}
-          </For>
-        </ul>
+        <Show when={investments()} fallback={<Loading label="Loading investments..." />}>
+          {(list) => (
+            <Show when={list().length > 0} fallback={<EmptyState>No investments yet</EmptyState>}>
+              <ul class="flex flex-col gap-2">
+                <For each={list()}>
+                  {(inv) => (
+                    <ListRow
+                      left={
+                        <RouterLink to={`/accounts/${params.id}/investments/${inv.id}`} class="link font-medium">
+                          {inv.name}
+                        </RouterLink>
+                      }
+                      right={
+                        <>
+                          <Badge>{inv.type}</Badge>
+                          <span>{inv.current_value}</span>
+                        </>
+                      }
+                    />
+                  )}
+                </For>
+              </ul>
+            </Show>
+          )}
+        </Show>
       </div>
     </div>
   );
