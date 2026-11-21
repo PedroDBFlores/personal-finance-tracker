@@ -10,6 +10,7 @@ vi.mock("./api", async (importOriginal) => {
     ...actual,
     listAccounts: vi.fn(),
     getAccount: vi.fn(),
+    getAccountBalance: vi.fn(),
     createAccount: vi.fn(),
     listMovements: vi.fn(),
     createMovement: vi.fn(),
@@ -57,6 +58,15 @@ const tick = () => Promise.resolve();
 beforeEach(() => {
   vi.mocked(api.listAccounts).mockResolvedValue(accounts);
   vi.mocked(api.getAccount).mockResolvedValue(accounts[0]);
+  vi.mocked(api.getAccountBalance).mockImplementation((id: string) =>
+    Promise.resolve({
+      account_id: id,
+      currency: "EUR",
+      movements_balance: "974.01",
+      investments_balance: "1000.00",
+      total_balance: "1974.01",
+    }),
+  );
   vi.mocked(api.createAccount).mockResolvedValue(accounts[0]);
   vi.mocked(api.listMovements).mockResolvedValue(movements);
   vi.mocked(api.createMovement).mockResolvedValue(movements[0]);
@@ -73,6 +83,21 @@ describe("routing", () => {
     expect(await screen.findByText("Bank A")).toBeInTheDocument();
     expect(screen.getByText("Broker B")).toBeInTheDocument();
     expect(api.listAccounts).toHaveBeenCalled();
+  });
+
+  it("main page shows each account's total balance", async () => {
+    renderAt("/");
+    expect((await screen.findAllByText(/1974\.01/)).length).toBe(2);
+    expect(api.getAccountBalance).toHaveBeenCalledWith("1");
+    expect(api.getAccountBalance).toHaveBeenCalledWith("2");
+  });
+
+  it("account detail page shows the balance breakdown", async () => {
+    renderAt("/accounts/1");
+    expect(await screen.findByText(/1974\.01 EUR/)).toBeInTheDocument();
+    expect(screen.getByText(/Movements 974\.01/)).toBeInTheDocument();
+    expect(screen.getByText(/Investments 1000\.00/)).toBeInTheDocument();
+    expect(api.getAccountBalance).toHaveBeenCalledWith("1");
   });
 
   it("navigates to the new-account page, creates, and returns to the list", async () => {

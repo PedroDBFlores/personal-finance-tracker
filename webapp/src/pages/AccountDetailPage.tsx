@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
 import { useParams } from "@solidjs/router";
-import type { Account, Investment, Movement } from "../api";
-import { getAccount, listInvestments, listMovements } from "../api";
+import type { Account, AccountBalance, Investment, Movement } from "../api";
+import { getAccount, getAccountBalance, listInvestments, listMovements } from "../api";
 import { RouterLink } from "../components/atoms/RouterLink";
 import { Badge } from "../components/atoms/Badge";
 import { EmptyState } from "../components/atoms/EmptyState";
@@ -12,6 +12,7 @@ import { PageHeader } from "../components/molecules/PageHeader";
 export default function AccountDetailPage() {
   const params = useParams<{ id: string }>();
   const [account, setAccount] = createSignal<Account | null>(null);
+  const [balance, setBalance] = createSignal<AccountBalance | null>(null);
   const [movements, setMovements] = createSignal<Movement[] | null>(null);
   const [investments, setInvestments] = createSignal<Investment[] | null>(null);
   const [error, setError] = createSignal<string | null>(null);
@@ -21,8 +22,9 @@ export default function AccountDetailPage() {
     const id = params.id;
     if (!id) return;
     try {
-      const [a, m, invs] = await Promise.all([getAccount(id), listMovements(id), listInvestments(id)]);
+      const [a, b, m, invs] = await Promise.all([getAccount(id), getAccountBalance(id), listMovements(id), listInvestments(id)]);
       setAccount(a);
+      setBalance(b);
       setMovements(m);
       setInvestments(invs);
       setError(null);
@@ -42,6 +44,18 @@ export default function AccountDetailPage() {
           <Badge>{account()!.type}</Badge>
           <Badge tone="purple">{account()!.currency}</Badge>
         </div>
+      </Show>
+      <Show when={balance()}>
+        {(b) => (
+          <div class="mb-4">
+            <p class="text-2xl font-semibold">
+              {b().total_balance} {b().currency}
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              Movements {b().movements_balance} · Investments {b().investments_balance}
+            </p>
+          </div>
+        )}
       </Show>
       <Show when={error()}>
         <p role="alert" class="text-red-500">
