@@ -225,6 +225,16 @@ func parseIdParam(w http.ResponseWriter, r *http.Request, name string) (domain.I
 	return domain.Id(n), true
 }
 
+func parseIntParam(w http.ResponseWriter, r *http.Request, name string) (int, bool) {
+	raw := r.PathValue(name)
+	n, err := strconv.Atoi(raw)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid "+name+" parameter")
+		return 0, false
+	}
+	return n, true
+}
+
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

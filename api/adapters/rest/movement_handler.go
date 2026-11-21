@@ -25,6 +25,14 @@ type movementLister interface {
 	Execute(ctx context.Context, accountId domain.Id) ([]dtos.MovementDto, error)
 }
 
+type movementMonthLister interface {
+	Execute(ctx context.Context, accountId domain.Id) ([]dtos.MovementMonthDto, error)
+}
+
+type movementByMonthLister interface {
+	Execute(ctx context.Context, accountId domain.Id, year, month int) ([]dtos.MovementDto, error)
+}
+
 type movementUpdater interface {
 	Execute(ctx context.Context, accountId, id domain.Id, update domain.MovementPatch) error
 }
@@ -67,25 +75,34 @@ func toMovementResponse(m dtos.MovementDto) movementResponse {
 	}
 }
 
+type movementMonthResponse struct {
+	Year  int `json:"year"`
+	Month int `json:"month"`
+}
+
 // --- handler ---
 
 type MovementHandler struct {
-	create movementCreator
-	get    movementGetter
-	list   movementLister
-	update movementUpdater
-	del    movementDeleter
-	logger *slog.Logger
+	create   movementCreator
+	get      movementGetter
+	list     movementLister
+	months   movementMonthLister
+	byMonth  movementByMonthLister
+	update   movementUpdater
+	del      movementDeleter
+	logger   *slog.Logger
 }
 
-func NewMovementHandler(create movementCreator, get movementGetter, list movementLister, update movementUpdater, del movementDeleter, logger *slog.Logger) *MovementHandler {
-	return &MovementHandler{create, get, list, update, del, logger}
+func NewMovementHandler(create movementCreator, get movementGetter, list movementLister, months movementMonthLister, byMonth movementByMonthLister, update movementUpdater, del movementDeleter, logger *slog.Logger) *MovementHandler {
+	return &MovementHandler{create, get, list, months, byMonth, update, del, logger}
 }
 
 // Register mounts the movement routes under prefix (e.g. "/accounts/{accountId}/movements").
 func (h *MovementHandler) Register(mux *http.ServeMux, prefix string) {
 	mux.HandleFunc("POST "+prefix, h.Create)
 	mux.HandleFunc("GET "+prefix, h.List)
+	mux.HandleFunc("GET "+prefix+"/months", h.ListMonths)
+	mux.HandleFunc("GET "+prefix+"/by-month/{year}/{month}", h.ListByMonth)
 	mux.HandleFunc("GET "+prefix+"/{movementId}", h.Get)
 	mux.HandleFunc("PATCH "+prefix+"/{movementId}", h.Update)
 	mux.HandleFunc("DELETE "+prefix+"/{movementId}", h.Delete)
@@ -144,6 +161,52 @@ func (h *MovementHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	movements, err := h.list.Execute(r.Context(), accountId)
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+	resp := make([]movementResponse, 0, len(movements))
+	for _, m := range movements {
+		resp = append(resp, toMovementResponse(m))
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *MovementHandler) ListMonths(w http.ResponseWriter, r *http.Request) {
+	accountId, ok := parseIdParam(w, r, "accountId")
+	if !ok {
+		return
+	}
+	months, err := h.months.Execute(r.Context(), accountId)
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+	resp := make([]movementMonthResponse, 0, len(months))
+	for _, m := range months {
+		resp = append(resp, movementMonthResponse{Year: m.Year, Month: m.Month})
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *MovementHandler) ListByMonth(w http.ResponseWriter, r *http.Request) {
+	accountId, ok := parseIdParam(w, r, "accountId")
+	if !ok {
+		return
+	}
+	year, ok := parseIntParam(w, r, "year")
+	if !ok {
+		return
+	}
+	month, ok := parseIntParam(w, r, "month")
+	if !ok {
+		return
+	}
+	if month < 1 || month > 12 {
+		writeError(w, http.StatusBadRequest, "invalid month parameter: must be between 1 and 12")
+		return
+	}
+	movements, err := h.byMonth.Execute(r.Context(), accountId, year, month)
 	if err != nil {
 		writeUsecaseError(w, err)
 		return

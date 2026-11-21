@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"testing"
@@ -250,5 +251,98 @@ func TestMovementRepository(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, mov)
 		})
+	})
+}
+
+func TestMovementRepositoryMonths(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	ctx := context.TODO()
+
+	t.Run("ListMonths returns distinct year/month pairs, most recent first", func(t *testing.T) {
+		db, err := getInMemoryDatabase(t, logger)
+		require.NoError(t, err)
+		accRepo := database.NewAccountRepository(db)
+		accountId, err := accRepo.Create(ctx, domain.Account{
+			Name: "Test Account", Type: domain.AccountTypeBank, Currency: domain.ParseCurrency("USD"), CreatedAt: time.Now(),
+		})
+		require.NoError(t, err)
+		repo := database.NewMovementRepository(db)
+		dates := []time.Time{
+			time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC),
+			time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC),
+			time.Date(2025, 3, 5, 0, 0, 0, 0, time.UTC),
+			time.Date(2024, 12, 31, 0, 0, 0, 0, time.UTC),
+		}
+		for i, d := range dates {
+			_, err := repo.Create(ctx, *accountId, domain.NewMovement(*accountId, fmt.Sprintf("m%d", i), domain.Money(100), domain.MovementTypeCredit, d))
+			require.NoError(t, err)
+		}
+
+		months, err := repo.ListMonths(ctx, *accountId)
+
+		require.NoError(t, err)
+		require.Equal(t, []domain.YearMonth{
+			{Year: 2025, Month: 3},
+			{Year: 2025, Month: 1},
+			{Year: 2024, Month: 12},
+		}, months)
+	})
+
+	t.Run("ListMonths returns empty when the account has no movements", func(t *testing.T) {
+		db, err := getInMemoryDatabase(t, logger)
+		require.NoError(t, err)
+		accRepo := database.NewAccountRepository(db)
+		accountId, err := accRepo.Create(ctx, domain.Account{
+			Name: "Test Account", Type: domain.AccountTypeBank, Currency: domain.ParseCurrency("USD"), CreatedAt: time.Now(),
+		})
+		require.NoError(t, err)
+		repo := database.NewMovementRepository(db)
+
+		months, err := repo.ListMonths(ctx, *accountId)
+
+		require.NoError(t, err)
+		require.Empty(t, months)
+	})
+
+	t.Run("ListByMonth returns only the movements of that year/month, ordered by date", func(t *testing.T) {
+		db, err := getInMemoryDatabase(t, logger)
+		require.NoError(t, err)
+		accRepo := database.NewAccountRepository(db)
+		accountId, err := accRepo.Create(ctx, domain.Account{
+			Name: "Test Account", Type: domain.AccountTypeBank, Currency: domain.ParseCurrency("USD"), CreatedAt: time.Now(),
+		})
+		require.NoError(t, err)
+		repo := database.NewMovementRepository(db)
+		_, err = repo.Create(ctx, *accountId, domain.NewMovement(*accountId, "Jan 20", domain.Money(200), domain.MovementTypeCredit, time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC)))
+		require.NoError(t, err)
+		_, err = repo.Create(ctx, *accountId, domain.NewMovement(*accountId, "Jan 10", domain.Money(100), domain.MovementTypeDebit, time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)))
+		require.NoError(t, err)
+		_, err = repo.Create(ctx, *accountId, domain.NewMovement(*accountId, "Feb", domain.Money(300), domain.MovementTypeCredit, time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)))
+		require.NoError(t, err)
+
+		movements, err := repo.ListByMonth(ctx, *accountId, 2025, 1)
+
+		require.NoError(t, err)
+		require.Len(t, movements, 2)
+		require.Equal(t, "Jan 10", movements[0].Description)
+		require.Equal(t, "Jan 20", movements[1].Description)
+	})
+
+	t.Run("ListByMonth returns empty for a month without movements", func(t *testing.T) {
+		db, err := getInMemoryDatabase(t, logger)
+		require.NoError(t, err)
+		accRepo := database.NewAccountRepository(db)
+		accountId, err := accRepo.Create(ctx, domain.Account{
+			Name: "Test Account", Type: domain.AccountTypeBank, Currency: domain.ParseCurrency("USD"), CreatedAt: time.Now(),
+		})
+		require.NoError(t, err)
+		repo := database.NewMovementRepository(db)
+		_, err = repo.Create(ctx, *accountId, domain.NewMovement(*accountId, "Jan", domain.Money(100), domain.MovementTypeCredit, time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)))
+		require.NoError(t, err)
+
+		movements, err := repo.ListByMonth(ctx, *accountId, 2025, 6)
+
+		require.NoError(t, err)
+		require.Empty(t, movements)
 	})
 }

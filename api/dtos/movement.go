@@ -28,3 +28,15 @@ type MovementDto struct {
 func NewMovementDto(m domain.Movement) MovementDto {
 	return MovementDto{m}
 }
+
+// MovementMonthDto is a year/month pair that has movements on an account.
+type MovementMonthDto struct {
+	// Year is the full calendar year (e.g., 2025).
+	Year int
+	// Month is the calendar month, 1-12.
+	Month int
+}
+
+func NewMovementMonthDto(ym domain.YearMonth) MovementMonthDto {
+	return MovementMonthDto{Year: ym.Year, Month: ym.Month}
+}
