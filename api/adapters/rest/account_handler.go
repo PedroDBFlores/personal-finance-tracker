@@ -36,6 +36,10 @@ type accountDeleter interface {
 	Execute(ctx context.Context, id domain.Id) error
 }
 
+type accountBalanceGetter interface {
+	Execute(ctx context.Context, id domain.Id) (*dtos.AccountBalanceDto, error)
+}
+
 // --- JSON wire types ---
 
 type createAccountRequest struct {
@@ -68,19 +72,38 @@ func toAccountResponse(a dtos.AccountDto) accountResponse {
 	}
 }
 
+type accountBalanceResponse struct {
+	AccountId          string `json:"account_id"`
+	Currency           string `json:"currency"`
+	MovementsBalance   string `json:"movements_balance"`
+	InvestmentsBalance string `json:"investments_balance"`
+	TotalBalance       string `json:"total_balance"`
+}
+
+func toAccountBalanceResponse(b dtos.AccountBalanceDto) accountBalanceResponse {
+	return accountBalanceResponse{
+		AccountId:          b.AccountId.String(),
+		Currency:           string(b.Currency),
+		MovementsBalance:   b.MovementsBalance.String(),
+		InvestmentsBalance: b.InvestmentsBalance.String(),
+		TotalBalance:       b.TotalBalance.String(),
+	}
+}
+
 // --- handler ---
 
 type AccountHandler struct {
-	create accountCreator
-	get    accountGetter
-	list   accountLister
-	update accountUpdater
-	del    accountDeleter
-	logger *slog.Logger
+	create  accountCreator
+	get     accountGetter
+	list    accountLister
+	update  accountUpdater
+	del     accountDeleter
+	balance accountBalanceGetter
+	logger  *slog.Logger
 }
 
-func NewAccountHandler(create accountCreator, get accountGetter, list accountLister, update accountUpdater, del accountDeleter, logger *slog.Logger) *AccountHandler {
-	return &AccountHandler{create, get, list, update, del, logger}
+func NewAccountHandler(create accountCreator, get accountGetter, list accountLister, update accountUpdater, del accountDeleter, balance accountBalanceGetter, logger *slog.Logger) *AccountHandler {
+	return &AccountHandler{create, get, list, update, del, balance, logger}
 }
 
 // Register mounts the account routes under the given prefix (e.g. "/accounts")
@@ -89,6 +112,7 @@ func (h *AccountHandler) Register(mux *http.ServeMux, prefix string) {
 	mux.HandleFunc("POST "+prefix, h.Create)
 	mux.HandleFunc("GET "+prefix, h.List)
 	mux.HandleFunc("GET "+prefix+"/{id}", h.Get)
+	mux.HandleFunc("GET "+prefix+"/{id}/balance", h.Balance)
 	mux.HandleFunc("PATCH "+prefix+"/{id}", h.Update)
 	mux.HandleFunc("DELETE "+prefix+"/{id}", h.Delete)
 }
@@ -124,6 +148,19 @@ func (h *AccountHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, toAccountResponse(*acc))
+}
+
+func (h *AccountHandler) Balance(w http.ResponseWriter, r *http.Request) {
+	id, ok := parseIdParam(w, r, "id")
+	if !ok {
+		return
+	}
+	balance, err := h.balance.Execute(r.Context(), id)
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, toAccountBalanceResponse(*balance))
 }
 
 func (h *AccountHandler) List(w http.ResponseWriter, r *http.Request) {

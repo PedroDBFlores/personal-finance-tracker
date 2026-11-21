@@ -24,14 +24,14 @@ func testLogger() *slog.Logger {
 }
 
 // newAccountRouter builds the account routes with real usecases backed by fake ports.
-func newAccountRouter(creator *usecasesfakes.FakeAccountCreator, getter *usecasesfakes.FakeAccountGetter, lister *usecasesfakes.FakeAccountLister, updater *usecasesfakes.FakeAccountUpdater, deleter *usecasesfakes.FakeAccountDeleter) http.Handler {
+func newAccountRouter(creator *usecasesfakes.FakeAccountCreator, getter *usecasesfakes.FakeAccountGetter, lister *usecasesfakes.FakeAccountLister, updater *usecasesfakes.FakeAccountUpdater, deleter *usecasesfakes.FakeAccountDeleter, balance *account.GetAccountBalanceUseCase) http.Handler {
 	logger := testLogger()
 	createUC := account.NewCreateAccountUseCase(creator, logger)
 	getUC := account.NewGetAccountUseCase(getter, logger)
 	listUC := account.NewListAccountsUseCase(lister, logger)
 	updateUC := account.NewUpdateAccountUseCase(updater, logger)
 	deleteUC := account.NewDeleteAccountUseCase(deleter, logger)
-	h := rest.NewAccountHandler(&createUC, &getUC, &listUC, &updateUC, &deleteUC, logger)
+	h := rest.NewAccountHandler(&createUC, &getUC, &listUC, &updateUC, &deleteUC, balance, logger)
 	mux := http.NewServeMux()
 	h.Register(mux, "/accounts")
 	return mux
@@ -59,7 +59,7 @@ func TestAccountHandlerCreate(t *testing.T) {
 		creator := &usecasesfakes.FakeAccountCreator{}
 		id := domain.Id(5)
 		creator.CreateReturns(&id, nil)
-		r := newAccountRouter(creator, nil, nil, nil, nil)
+		r := newAccountRouter(creator, nil, nil, nil, nil, nil)
 
 		rec := doRequest(t, r, http.MethodPost, "/accounts", map[string]string{
 			"name": "Bank A", "type": "Bank", "currency": "EUR",
@@ -79,7 +79,7 @@ func TestAccountHandlerCreate(t *testing.T) {
 
 	t.Run("returns 400 when name is missing", func(t *testing.T) {
 		creator := &usecasesfakes.FakeAccountCreator{}
-		r := newAccountRouter(creator, nil, nil, nil, nil)
+		r := newAccountRouter(creator, nil, nil, nil, nil, nil)
 
 		rec := doRequest(t, r, http.MethodPost, "/accounts", map[string]string{"name": "", "type": "Bank", "currency": "EUR"})
 		require.Equal(t, http.StatusBadRequest, rec.Code)
@@ -89,7 +89,7 @@ func TestAccountHandlerCreate(t *testing.T) {
 	t.Run("returns 500 when the usecase fails", func(t *testing.T) {
 		creator := &usecasesfakes.FakeAccountCreator{}
 		creator.CreateReturns(nil, errors.New("db down"))
-		r := newAccountRouter(creator, nil, nil, nil, nil)
+		r := newAccountRouter(creator, nil, nil, nil, nil, nil)
 
 		rec := doRequest(t, r, http.MethodPost, "/accounts", map[string]string{"name": "Bank A", "type": "Bank", "currency": "EUR"})
 		require.Equal(t, http.StatusInternalServerError, rec.Code)
@@ -101,7 +101,7 @@ func TestAccountHandlerGet(t *testing.T) {
 		getter := &usecasesfakes.FakeAccountGetter{}
 		acc := sampleAccount()
 		getter.GetReturns(&acc, nil)
-		r := newAccountRouter(nil, getter, nil, nil, nil)
+		r := newAccountRouter(nil, getter, nil, nil, nil, nil)
 
 		rec := doRequest(t, r, http.MethodGet, "/accounts/1", nil)
 
@@ -118,7 +118,7 @@ func TestAccountHandlerGet(t *testing.T) {
 	t.Run("returns 404 when not found", func(t *testing.T) {
 		getter := &usecasesfakes.FakeAccountGetter{}
 		getter.GetReturns(nil, app_errors.NewResourceNotFoundError("Account", "9"))
-		r := newAccountRouter(nil, getter, nil, nil, nil)
+		r := newAccountRouter(nil, getter, nil, nil, nil, nil)
 
 		rec := doRequest(t, r, http.MethodGet, "/accounts/9", nil)
 		require.Equal(t, http.StatusNotFound, rec.Code)
@@ -126,7 +126,7 @@ func TestAccountHandlerGet(t *testing.T) {
 
 	t.Run("returns 400 on non-numeric id", func(t *testing.T) {
 		getter := &usecasesfakes.FakeAccountGetter{}
-		r := newAccountRouter(nil, getter, nil, nil, nil)
+		r := newAccountRouter(nil, getter, nil, nil, nil, nil)
 
 		rec := doRequest(t, r, http.MethodGet, "/accounts/abc", nil)
 		require.Equal(t, http.StatusBadRequest, rec.Code)
@@ -138,7 +138,7 @@ func TestAccountHandlerList(t *testing.T) {
 	t.Run("lists accounts", func(t *testing.T) {
 		lister := &usecasesfakes.FakeAccountLister{}
 		lister.ListReturns([]domain.Account{sampleAccount()}, nil)
-		r := newAccountRouter(nil, nil, lister, nil, nil)
+		r := newAccountRouter(nil, nil, lister, nil, nil, nil)
 
 		rec := doRequest(t, r, http.MethodGet, "/accounts", nil)
 
@@ -154,7 +154,7 @@ func TestAccountHandlerUpdate(t *testing.T) {
 	t.Run("applies a partial update", func(t *testing.T) {
 		updater := &usecasesfakes.FakeAccountUpdater{}
 		updater.UpdateReturns(nil)
-		r := newAccountRouter(nil, nil, nil, updater, nil)
+		r := newAccountRouter(nil, nil, nil, updater, nil, nil)
 
 		rec := doRequest(t, r, http.MethodPatch, "/accounts/3", map[string]string{"name": "New Name"})
 
@@ -169,7 +169,7 @@ func TestAccountHandlerUpdate(t *testing.T) {
 	t.Run("returns 404 when the account doesn't exist", func(t *testing.T) {
 		updater := &usecasesfakes.FakeAccountUpdater{}
 		updater.UpdateReturns(app_errors.NewResourceNotFoundError("Account", "3"))
-		r := newAccountRouter(nil, nil, nil, updater, nil)
+		r := newAccountRouter(nil, nil, nil, updater, nil, nil)
 
 		rec := doRequest(t, r, http.MethodPatch, "/accounts/3", map[string]string{"name": "X"})
 		require.Equal(t, http.StatusNotFound, rec.Code)
@@ -180,7 +180,7 @@ func TestAccountHandlerDelete(t *testing.T) {
 	t.Run("deletes an account", func(t *testing.T) {
 		deleter := &usecasesfakes.FakeAccountDeleter{}
 		deleter.DeleteReturns(nil)
-		r := newAccountRouter(nil, nil, nil, nil, deleter)
+		r := newAccountRouter(nil, nil, nil, nil, deleter, nil)
 
 		rec := doRequest(t, r, http.MethodDelete, "/accounts/4", nil)
 
@@ -192,9 +192,77 @@ func TestAccountHandlerDelete(t *testing.T) {
 	t.Run("returns 404 when the account doesn't exist", func(t *testing.T) {
 		deleter := &usecasesfakes.FakeAccountDeleter{}
 		deleter.DeleteReturns(app_errors.NewResourceNotFoundError("Account", "4"))
-		r := newAccountRouter(nil, nil, nil, nil, deleter)
+		r := newAccountRouter(nil, nil, nil, nil, deleter, nil)
 
 		rec := doRequest(t, r, http.MethodDelete, "/accounts/4", nil)
 		require.Equal(t, http.StatusNotFound, rec.Code)
+	})
+}
+
+func TestAccountHandlerBalance(t *testing.T) {
+	now := time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC)
+	money := func(s string) domain.Money {
+		m, err := domain.ParseMoney(s)
+		require.NoError(t, err)
+		return m
+	}
+
+	balanceRouter := func(getter *usecasesfakes.FakeAccountGetter, movements *usecasesfakes.FakeMovementLister, investments *usecasesfakes.FakeInvestmentLister, txs *usecasesfakes.FakeInvestmentTransactionLister) http.Handler {
+		logger := testLogger()
+		balanceUC := account.NewGetAccountBalanceUseCase(getter, movements, investments, txs, logger)
+		return newAccountRouter(nil, nil, nil, nil, nil, &balanceUC)
+	}
+
+	t.Run("returns the combined balance", func(t *testing.T) {
+		getter := &usecasesfakes.FakeAccountGetter{}
+		movements := &usecasesfakes.FakeMovementLister{}
+		investments := &usecasesfakes.FakeInvestmentLister{}
+		txs := &usecasesfakes.FakeInvestmentTransactionLister{}
+
+		acc := sampleAccount()
+		getter.GetReturns(&acc, nil)
+		movements.ListReturns([]domain.Movement{
+			domain.NewMovement(1, "Salary", money("1000.00"), domain.MovementTypeCredit, now),
+			domain.NewMovement(1, "Groceries", money("25.99"), domain.MovementTypeDebit, now),
+		}, nil)
+		inv := domain.NewInvestment(2, 1, "Vanguard ETF", domain.ETF, domain.CurrencyEUR, now, nil)
+		investments.ListReturns([]domain.Investment{inv}, nil)
+		txs.ListReturns([]domain.InvestmentTransaction{
+			domain.NewInvestmentTransaction(10, 2, domain.Buy, 0, money("10.00"), money("100.00"), now, "Initial Buy"),
+		}, nil)
+
+		rec := doRequest(t, balanceRouter(getter, movements, investments, txs), http.MethodGet, "/accounts/1/balance", nil)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		_, calledId := getter.GetArgsForCall(0)
+		require.Equal(t, domain.Id(1), calledId)
+		var resp map[string]any
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.Equal(t, "1", resp["account_id"])
+		require.Equal(t, "EUR", resp["currency"])
+		require.Equal(t, "974.01", resp["movements_balance"])
+		require.Equal(t, "1000.00", resp["investments_balance"])
+		require.Equal(t, "1974.01", resp["total_balance"])
+	})
+
+	t.Run("returns 404 when the account does not exist", func(t *testing.T) {
+		getter := &usecasesfakes.FakeAccountGetter{}
+		getter.GetReturns(nil, app_errors.NewResourceNotFoundError("Account", "9"))
+		r := balanceRouter(getter, &usecasesfakes.FakeMovementLister{}, &usecasesfakes.FakeInvestmentLister{}, &usecasesfakes.FakeInvestmentTransactionLister{})
+
+		rec := doRequest(t, r, http.MethodGet, "/accounts/9/balance", nil)
+
+		require.Equal(t, http.StatusNotFound, rec.Code)
+		var resp map[string]any
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+		require.Contains(t, resp["error"], "Account")
+	})
+
+	t.Run("returns 400 for an invalid id", func(t *testing.T) {
+		r := balanceRouter(&usecasesfakes.FakeAccountGetter{}, &usecasesfakes.FakeMovementLister{}, &usecasesfakes.FakeInvestmentLister{}, &usecasesfakes.FakeInvestmentTransactionLister{})
+
+		rec := doRequest(t, r, http.MethodGet, "/accounts/abc/balance", nil)
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
 	})
 }
