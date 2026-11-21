@@ -66,6 +66,18 @@ export function getAccount(id: string): Promise<Account> {
   return request<Account>(`/accounts/${id}`);
 }
 
+export interface AccountBalance {
+  account_id: string;
+  currency: string;
+  movements_balance: string; // decimal string, e.g. "974.01"
+  investments_balance: string; // decimal string, e.g. "1000.00"
+  total_balance: string; // decimal string, e.g. "1974.01"
+}
+
+export function getAccountBalance(accountId: string): Promise<AccountBalance> {
+  return request<AccountBalance>(`/accounts/${accountId}/balance`);
+}
+
 export function createAccount(input: CreateAccountInput): Promise<Account> {
   return request<Account>("/accounts", {
     method: "POST",

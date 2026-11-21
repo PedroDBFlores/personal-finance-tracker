@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   listAccounts,
   getAccount,
+  getAccountBalance,
   createAccount,
   updateAccount,
   deleteAccount,
@@ -50,6 +51,22 @@ describe("api client", () => {
 
     expect(result).toEqual(account);
     expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts/1`, expect.anything());
+  });
+
+  it("gets an account balance", async () => {
+    const balance = {
+      account_id: "1",
+      currency: "EUR",
+      movements_balance: "974.01",
+      investments_balance: "1000.00",
+      total_balance: "1974.01",
+    };
+    const fetchMock = mockFetchOnce(200, balance);
+
+    const result = await getAccountBalance("1");
+
+    expect(result).toEqual(balance);
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts/1/balance`, expect.anything());
   });
 
   it("creates an account with a JSON body", async () => {
