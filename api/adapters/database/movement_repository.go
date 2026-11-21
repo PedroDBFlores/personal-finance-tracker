@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -74,6 +75,44 @@ func (r *MovementRepository) List(ctx context.Context, accountId domain.Id) ([]d
 	}
 
 	return modelMovements, nil
+}
+
+func (r *MovementRepository) ListMonths(ctx context.Context, accountId domain.Id) ([]domain.YearMonth, error) {
+	var rows []struct {
+		Year  int
+		Month int
+	}
+	err := r.db.WithContext(ctx).Model(&Movement{}).
+		Select("CAST(strftime('%Y', date) AS INTEGER) AS year, CAST(strftime('%m', date) AS INTEGER) AS month").
+		Where("account_id = ?", accountId).
+		Group("year, month").
+		Order("year DESC, month DESC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	months := make([]domain.YearMonth, 0, len(rows))
+	for _, row := range rows {
+		months = append(months, domain.YearMonth{Year: row.Year, Month: row.Month})
+	}
+	return months, nil
+}
+
+func (r *MovementRepository) ListByMonth(ctx context.Context, accountId domain.Id, year, month int) ([]domain.Movement, error) {
+	yearStr := fmt.Sprintf("%04d", year)
+	monthStr := fmt.Sprintf("%02d", month)
+	movements, err := gorm.G[Movement](r.db).
+		Where("account_id = ? AND strftime('%Y', date) = ? AND strftime('%m', date) = ?", accountId, yearStr, monthStr).
+		Order("date ASC").
+		Find(ctx)
+	if err != nil {
+		return []domain.Movement{}, err
+	}
+	result := make([]domain.Movement, 0, len(movements))
+	for _, m := range movements {
+		result = append(result, dbMovementToDomainMovement(m))
+	}
+	return result, nil
 }
 
 func (r *MovementRepository) Delete(ctx context.Context, accountId, id domain.Id) error {

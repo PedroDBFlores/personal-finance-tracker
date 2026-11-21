@@ -43,6 +43,8 @@ func main() {
 	createMovement := movement.NewCreateMovementUseCase(&movementRepo, logger)
 	getMovement := movement.NewGetMovementUseCase(&movementRepo, logger)
 	listMovements := movement.NewListMovementsUseCase(&movementRepo, logger)
+	listMovementMonths := movement.NewListMovementMonthsUseCase(&accountRepo, &movementRepo, logger)
+	listMovementsByMonth := movement.NewListMovementsByMonthUseCase(&accountRepo, &movementRepo, logger)
 	updateMovement := movement.NewUpdateMovementUseCase(&movementRepo, logger)
 	deleteMovement := movement.NewDeleteMovementUseCase(&movementRepo, logger)
 
@@ -59,7 +61,7 @@ func main() {
 	deleteInvestmentTransaction := investmenttransaction.NewDeleteInvestmentTransactionUseCase(&investmentTransactionRepo, logger)
 
 	accountHandler := rest.NewAccountHandler(&createAccount, &getAccount, &listAccounts, &updateAccount, &deleteAccount, &getAccountBalance, logger)
-	movementHandler := rest.NewMovementHandler(&createMovement, &getMovement, &listMovements, &updateMovement, &deleteMovement, logger)
+	movementHandler := rest.NewMovementHandler(&createMovement, &getMovement, &listMovements, &listMovementMonths, &listMovementsByMonth, &updateMovement, &deleteMovement, logger)
 	investmentHandler := rest.NewInvestmentHandler(&createInvestment, &getInvestment, &listInvestments, &updateInvestment, &deleteInvestment, logger)
 	investmentTransactionHandler := rest.NewInvestmentTransactionHandler(&createInvestmentTransaction, &getInvestmentTransaction, &listInvestmentTransactions, &updateInvestmentTransaction, &deleteInvestmentTransaction, logger)
 

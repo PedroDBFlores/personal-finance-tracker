@@ -26,6 +26,16 @@ type MovementLister interface {
 	List(ctx context.Context, accountId domain.Id) ([]domain.Movement, error)
 }
 
+//counterfeiter:generate . MovementMonthLister
+type MovementMonthLister interface {
+	ListMonths(ctx context.Context, accountId domain.Id) ([]domain.YearMonth, error)
+}
+
+//counterfeiter:generate . MovementByMonthLister
+type MovementByMonthLister interface {
+	ListByMonth(ctx context.Context, accountId domain.Id, year, month int) ([]domain.Movement, error)
+}
+
 //counterfeiter:generate . MovementDeleter
 type MovementDeleter interface {
 	Delete(ctx context.Context, accountId, id domain.Id) error
