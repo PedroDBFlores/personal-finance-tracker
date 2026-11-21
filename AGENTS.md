@@ -3,7 +3,7 @@
 Personal finance tracker, tracked as **two projects** in this repo:
 
 ```
-api/                 Go REST API (Clean Architecture, SQLite via GORM, chi router)
+api/                 Go REST API (Clean Architecture, SQLite via GORM, stdlib ServeMux)
 webapp/              SolidJS webapp — consumes the api over HTTP
 ```
 
@@ -66,7 +66,7 @@ the rest of the project.
 ```
 api/cmd/             composition root: opens SQLite, builds repos + usecases, serves HTTP on :8080
 api/adapters/database/  SQLite persistence: GORM models + repositories implementing usecase ports
-api/adapters/rest/      HTTP handlers (chi): one file per entity + router.go
+api/adapters/rest/      HTTP handlers (stdlib http.ServeMux): one file per entity + router.go
 api/usecases/           ports (interfaces) at package root, implementations in usecases/<entity>/,
                         generated fakes in usecases/usecasesfakes/
 api/domain/             entities, value objects, enums — no project-internal dependencies
@@ -98,7 +98,9 @@ api/app_errors/         shared error types (e.g. ResourceNotFoundError)
   `//counterfeiter:generate . XxxYyy` directive. Naming: `<Entity>Creator`,
   `<Entity>Updater`, `<Entity>Getter`, `<Entity>Lister`, `<Entity>Deleter`.
   Methods take `ctx context.Context` first. Child entities are scoped by their parent id
-  (e.g. movement ports take `accountId`). Updates take a `<Entity>Patch` struct with
+  (e.g. movement ports take `accountId`; investment-transaction ports take both
+  `accountId` and `investmentId`, enforced in the repository via a subquery on
+  `investments.account_id`). Updates take a `<Entity>Patch` struct with
   pointer fields (nil = leave unchanged) — partial updates.
 - Implementations live in `usecases/<entity>/`, one usecase per file:
   `<verb>_<entity>_usecase.go`, package `<entity>`. Struct `XxxUseCase` holds the ports
@@ -126,8 +128,10 @@ api/app_errors/         shared error types (e.g. ResourceNotFoundError)
 
 ### api/adapters/rest/ (HTTP handlers)
 
-- chi router (`github.com/go-chi/chi/v5`). One handler per entity
-  (`account_handler.go`, `movement_handler.go`) plus `router.go` with `NewRouter`.
+- stdlib router (`net/http.ServeMux`, Go 1.22+ method+path patterns — no chi).
+  One handler per entity (`account_handler.go`, `movement_handler.go`); each handler
+  exposes `Register(mux *http.ServeMux, prefix string)`, and `router.go`'s `NewRouter`
+  wires the prefixes. Path params are read with `r.PathValue(name)`.
 - Routes: `POST/GET /accounts`, `GET/PATCH/DELETE /accounts/{id}`, nested
   `POST/GET /accounts/{accountId}/movements`, `GET/PATCH/DELETE .../movements/{movementId}`,
   nested `POST/GET /accounts/{accountId}/investments`,

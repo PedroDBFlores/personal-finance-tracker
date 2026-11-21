@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
@@ -18,8 +19,8 @@ func NewGetInvestmentTransactionUseCase(getter usecases.InvestmentTransactionGet
 	return GetInvestmentTransactionUseCase{getter, logger}
 }
 
-func (u *GetInvestmentTransactionUseCase) Execute(ctx context.Context, investmentId, id uuid.UUID) (*dtos.InvestmentTransactionDto, error) {
-	result, err := u.getter.Get(ctx, investmentId, id)
+func (u *GetInvestmentTransactionUseCase) Execute(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) (*dtos.InvestmentTransactionDto, error) {
+	result, err := u.getter.Get(ctx, accountId, investmentId, id)
 	if err != nil {
 		return nil, err
 	}

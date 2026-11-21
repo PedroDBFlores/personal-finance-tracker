@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
@@ -84,15 +83,14 @@ func NewAccountHandler(create accountCreator, get accountGetter, list accountLis
 	return &AccountHandler{create, get, list, update, del, logger}
 }
 
-// Router mounts the account routes.
-func (h *AccountHandler) Router() chi.Router {
-	r := chi.NewRouter()
-	r.Post("/", h.Create)
-	r.Get("/", h.List)
-	r.Get("/{id}", h.Get)
-	r.Patch("/{id}", h.Update)
-	r.Delete("/{id}", h.Delete)
-	return r
+// Register mounts the account routes under the given prefix (e.g. "/accounts")
+// on a stdlib ServeMux, using method + path patterns.
+func (h *AccountHandler) Register(mux *http.ServeMux, prefix string) {
+	mux.HandleFunc("POST "+prefix, h.Create)
+	mux.HandleFunc("GET "+prefix, h.List)
+	mux.HandleFunc("GET "+prefix+"/{id}", h.Get)
+	mux.HandleFunc("PATCH "+prefix+"/{id}", h.Update)
+	mux.HandleFunc("DELETE "+prefix+"/{id}", h.Delete)
 }
 
 func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -181,7 +179,7 @@ func (h *AccountHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // --- shared helpers ---
 
 func parseIdParam(w http.ResponseWriter, r *http.Request, name string) (domain.Id, bool) {
-	raw := chi.URLParam(r, name)
+	raw := r.PathValue(name)
 	n, err := strconv.ParseUint(raw, 10, 64)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid "+name+" parameter")

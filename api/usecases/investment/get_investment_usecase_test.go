@@ -44,7 +44,8 @@ func TestGetInvestmentUseCase(t *testing.T) {
 		require.Equal(t, ctx, ctxArg)
 		require.Equal(t, accountId, calledAccountId)
 		require.Equal(t, investmentId, calledId)
-		_, calledInvestmentId := txLister.ListArgsForCall(0)
+		_, calledListAccountId, calledInvestmentId := txLister.ListArgsForCall(0)
+		require.Equal(t, accountId, calledListAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 	})
 

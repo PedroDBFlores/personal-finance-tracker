@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/rest"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -25,7 +24,7 @@ func testLogger() *slog.Logger {
 }
 
 // newAccountRouter builds the account routes with real usecases backed by fake ports.
-func newAccountRouter(creator *usecasesfakes.FakeAccountCreator, getter *usecasesfakes.FakeAccountGetter, lister *usecasesfakes.FakeAccountLister, updater *usecasesfakes.FakeAccountUpdater, deleter *usecasesfakes.FakeAccountDeleter) chi.Router {
+func newAccountRouter(creator *usecasesfakes.FakeAccountCreator, getter *usecasesfakes.FakeAccountGetter, lister *usecasesfakes.FakeAccountLister, updater *usecasesfakes.FakeAccountUpdater, deleter *usecasesfakes.FakeAccountDeleter) http.Handler {
 	logger := testLogger()
 	createUC := account.NewCreateAccountUseCase(creator, logger)
 	getUC := account.NewGetAccountUseCase(getter, logger)
@@ -33,9 +32,9 @@ func newAccountRouter(creator *usecasesfakes.FakeAccountCreator, getter *usecase
 	updateUC := account.NewUpdateAccountUseCase(updater, logger)
 	deleteUC := account.NewDeleteAccountUseCase(deleter, logger)
 	h := rest.NewAccountHandler(&createUC, &getUC, &listUC, &updateUC, &deleteUC, logger)
-	r := chi.NewRouter()
-	r.Mount("/accounts", h.Router())
-	return r
+	mux := http.NewServeMux()
+	h.Register(mux, "/accounts")
+	return mux
 }
 
 func sampleAccount() domain.Account {

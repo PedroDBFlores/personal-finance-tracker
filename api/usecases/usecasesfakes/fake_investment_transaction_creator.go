@@ -11,7 +11,7 @@ import (
 )
 
 type FakeInvestmentTransactionCreator struct {
-	CreateStub        func(context.Context, uuid.UUID, domain.InvestmentTransaction) (*uuid.UUID, error)
+	CreateStub        func(context.Context, domain.Id, uuid.UUID, domain.InvestmentTransaction) (*uuid.UUID, error)
 	createMutex       sync.RWMutex
 	createArgsForCall []FakeInvestmentTransactionCreatorCreateArgs
 	createReturns     struct {
@@ -30,20 +30,21 @@ type FakeInvestmentTransactionCreator struct {
 // FakeInvestmentTransactionCreatorCreateArgs holds the arguments of one call to Create.
 type FakeInvestmentTransactionCreatorCreateArgs struct {
 	Arg1 context.Context
-	Arg2 uuid.UUID
-	Arg3 domain.InvestmentTransaction
+	Arg2 domain.Id
+	Arg3 uuid.UUID
+	Arg4 domain.InvestmentTransaction
 }
 
-func (fake *FakeInvestmentTransactionCreator) Create(arg1 context.Context, arg2 uuid.UUID, arg3 domain.InvestmentTransaction) (*uuid.UUID, error) {
+func (fake *FakeInvestmentTransactionCreator) Create(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID, arg4 domain.InvestmentTransaction) (*uuid.UUID, error) {
 	fake.createMutex.Lock()
 	ret, specificReturn := fake.createReturnsOnCall[len(fake.createArgsForCall)]
-	fake.createArgsForCall = append(fake.createArgsForCall, FakeInvestmentTransactionCreatorCreateArgs{arg1, arg2, arg3})
+	fake.createArgsForCall = append(fake.createArgsForCall, FakeInvestmentTransactionCreatorCreateArgs{arg1, arg2, arg3, arg4})
 	stub := fake.CreateStub
 	fakeReturns := fake.createReturns
-	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("Create", []interface{}{arg1, arg2, arg3, arg4})
 	fake.createMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -57,17 +58,17 @@ func (fake *FakeInvestmentTransactionCreator) CreateCallCount() int {
 	return len(fake.createArgsForCall)
 }
 
-func (fake *FakeInvestmentTransactionCreator) CreateCalls(stub func(context.Context, uuid.UUID, domain.InvestmentTransaction) (*uuid.UUID, error)) {
+func (fake *FakeInvestmentTransactionCreator) CreateCalls(stub func(context.Context, domain.Id, uuid.UUID, domain.InvestmentTransaction) (*uuid.UUID, error)) {
 	fake.createMutex.Lock()
 	defer fake.createMutex.Unlock()
 	fake.CreateStub = stub
 }
 
-func (fake *FakeInvestmentTransactionCreator) CreateArgsForCall(i int) (context.Context, uuid.UUID, domain.InvestmentTransaction) {
+func (fake *FakeInvestmentTransactionCreator) CreateArgsForCall(i int) (context.Context, domain.Id, uuid.UUID, domain.InvestmentTransaction) {
 	fake.createMutex.RLock()
 	defer fake.createMutex.RUnlock()
 	argsForCall := fake.createArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3, argsForCall.Arg4
 }
 
 func (fake *FakeInvestmentTransactionCreator) CreateArgs() []FakeInvestmentTransactionCreatorCreateArgs {

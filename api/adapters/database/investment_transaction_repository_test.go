@@ -42,13 +42,13 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 	}
 
 	t.Run("it creates a transaction in the database", func(t *testing.T) {
-		_, investmentId, _, repo := setup(t)
+		accountId, investmentId, _, repo := setup(t)
 
-		id, err := repo.Create(ctx, investmentId, newTx(investmentId))
+		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
 		require.NotEqual(t, uuid.Nil, *id)
 
-		tx, err := repo.Get(ctx, investmentId, *id)
+		tx, err := repo.Get(ctx, accountId, investmentId, *id)
 		require.NoError(t, err)
 		require.NotNil(t, tx)
 		require.Equal(t, *id, tx.Id)
@@ -59,36 +59,54 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 		require.Equal(t, "Initial Buy", tx.Description)
 	})
 
-	t.Run("get returns ResourceNotFoundError if the transaction doesn't exist", func(t *testing.T) {
+	t.Run("create returns ResourceNotFoundError if the investment belongs to another account", func(t *testing.T) {
 		_, investmentId, _, repo := setup(t)
 
+		id, err := repo.Create(ctx, domain.Id(999), investmentId, newTx(investmentId))
+		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Investment", investmentId.String()))
+		require.Nil(t, id)
+	})
+
+	t.Run("get returns ResourceNotFoundError if the transaction doesn't exist", func(t *testing.T) {
+		accountId, investmentId, _, repo := setup(t)
+
 		id := uuid.New()
-		tx, err := repo.Get(ctx, investmentId, id)
+		tx, err := repo.Get(ctx, accountId, investmentId, id)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
 		require.Nil(t, tx)
 	})
 
 	t.Run("get returns ResourceNotFoundError if the transaction belongs to another investment", func(t *testing.T) {
-		_, investmentId, _, repo := setup(t)
-		id, err := repo.Create(ctx, investmentId, newTx(investmentId))
+		accountId, investmentId, _, repo := setup(t)
+		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
 
-		tx, err := repo.Get(ctx, uuid.New(), *id)
+		tx, err := repo.Get(ctx, accountId, uuid.New(), *id)
+		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
+		require.Nil(t, tx)
+	})
+
+	t.Run("get returns ResourceNotFoundError if the investment belongs to another account", func(t *testing.T) {
+		accountId, investmentId, _, repo := setup(t)
+		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
+		require.NoError(t, err)
+
+		tx, err := repo.Get(ctx, domain.Id(999), investmentId, *id)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
 		require.Nil(t, tx)
 	})
 
 	t.Run("update applies only the given fields", func(t *testing.T) {
-		_, investmentId, _, repo := setup(t)
-		id, err := repo.Create(ctx, investmentId, newTx(investmentId))
+		accountId, investmentId, _, repo := setup(t)
+		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
 
 		newDescription := "Updated"
 		newPrice := domain.Money(12000)
-		err = repo.Update(ctx, investmentId, *id, domain.InvestmentTransactionPatch{Description: &newDescription, Price: &newPrice})
+		err = repo.Update(ctx, accountId, investmentId, *id, domain.InvestmentTransactionPatch{Description: &newDescription, Price: &newPrice})
 		require.NoError(t, err)
 
-		tx, err := repo.Get(ctx, investmentId, *id)
+		tx, err := repo.Get(ctx, accountId, investmentId, *id)
 		require.NoError(t, err)
 		require.Equal(t, "Updated", tx.Description)
 		require.Equal(t, domain.Money(12000), tx.Price)
@@ -97,50 +115,84 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 	})
 
 	t.Run("update returns ResourceNotFoundError if the transaction doesn't exist", func(t *testing.T) {
-		_, investmentId, _, repo := setup(t)
+		accountId, investmentId, _, repo := setup(t)
 
 		id := uuid.New()
 		newPrice := domain.Money(12000)
-		err := repo.Update(ctx, investmentId, id, domain.InvestmentTransactionPatch{Price: &newPrice})
+		err := repo.Update(ctx, accountId, investmentId, id, domain.InvestmentTransactionPatch{Price: &newPrice})
+		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
+	})
+
+	t.Run("update returns ResourceNotFoundError if the investment belongs to another account", func(t *testing.T) {
+		accountId, investmentId, _, repo := setup(t)
+		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
+		require.NoError(t, err)
+
+		newPrice := domain.Money(12000)
+		err = repo.Update(ctx, domain.Id(999), investmentId, *id, domain.InvestmentTransactionPatch{Price: &newPrice})
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
 	})
 
 	t.Run("list returns only the transactions of the given investment", func(t *testing.T) {
-		_, investmentId, _, repo := setup(t)
-		firstId, err := repo.Create(ctx, investmentId, newTx(investmentId))
+		accountId, investmentId, _, repo := setup(t)
+		firstId, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
-		secondId, err := repo.Create(ctx, investmentId, domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), time.Now(), "Sell"))
+		secondId, err := repo.Create(ctx, accountId, investmentId, domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), time.Now(), "Sell"))
 		require.NoError(t, err)
 
-		txs, err := repo.List(ctx, investmentId)
+		txs, err := repo.List(ctx, accountId, investmentId)
 		require.NoError(t, err)
 		require.Len(t, txs, 2)
 		require.Equal(t, *firstId, txs[0].Id)
 		require.Equal(t, *secondId, txs[1].Id)
 
-		other, err := repo.List(ctx, uuid.New())
+		other, err := repo.List(ctx, accountId, uuid.New())
 		require.NoError(t, err)
 		require.Empty(t, other)
 	})
 
+	t.Run("list returns empty if the investment belongs to another account", func(t *testing.T) {
+		accountId, investmentId, _, repo := setup(t)
+		_, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
+		require.NoError(t, err)
+
+		txs, err := repo.List(ctx, domain.Id(999), investmentId)
+		require.NoError(t, err)
+		require.Empty(t, txs)
+	})
+
 	t.Run("delete removes the transaction", func(t *testing.T) {
-		_, investmentId, _, repo := setup(t)
-		id, err := repo.Create(ctx, investmentId, newTx(investmentId))
+		accountId, investmentId, _, repo := setup(t)
+		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
 
-		err = repo.Delete(ctx, investmentId, *id)
+		err = repo.Delete(ctx, accountId, investmentId, *id)
 		require.NoError(t, err)
 
-		tx, err := repo.Get(ctx, investmentId, *id)
+		tx, err := repo.Get(ctx, accountId, investmentId, *id)
 		require.Error(t, err)
 		require.Nil(t, tx)
 	})
 
 	t.Run("delete returns ResourceNotFoundError if the transaction doesn't exist", func(t *testing.T) {
-		_, investmentId, _, repo := setup(t)
+		accountId, investmentId, _, repo := setup(t)
 
 		id := uuid.New()
-		err := repo.Delete(ctx, investmentId, id)
+		err := repo.Delete(ctx, accountId, investmentId, id)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
+	})
+
+	t.Run("delete returns ResourceNotFoundError if the investment belongs to another account", func(t *testing.T) {
+		accountId, investmentId, _, repo := setup(t)
+		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
+		require.NoError(t, err)
+
+		err = repo.Delete(ctx, domain.Id(999), investmentId, *id)
+		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
+
+		// the transaction is untouched
+		tx, err := repo.Get(ctx, accountId, investmentId, *id)
+		require.NoError(t, err)
+		require.NotNil(t, tx)
 	})
 }

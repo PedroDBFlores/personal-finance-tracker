@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/google/uuid"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
@@ -18,8 +19,8 @@ func NewListInvestmentTransactionsUseCase(lister usecases.InvestmentTransactionL
 	return ListInvestmentTransactionsUseCase{lister, logger}
 }
 
-func (u *ListInvestmentTransactionsUseCase) Execute(ctx context.Context, investmentId uuid.UUID) ([]dtos.InvestmentTransactionDto, error) {
-	result, err := u.lister.List(ctx, investmentId)
+func (u *ListInvestmentTransactionsUseCase) Execute(ctx context.Context, accountId domain.Id, investmentId uuid.UUID) ([]dtos.InvestmentTransactionDto, error) {
+	result, err := u.lister.List(ctx, accountId, investmentId)
 	if err != nil {
 		return []dtos.InvestmentTransactionDto{}, err
 	}

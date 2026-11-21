@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/rest"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
@@ -17,7 +16,7 @@ import (
 )
 
 // newInvestmentTransactionRouter builds the transaction routes with real usecases backed by fake ports.
-func newInvestmentTransactionRouter(creator *usecasesfakes.FakeInvestmentTransactionCreator, getter *usecasesfakes.FakeInvestmentTransactionGetter, lister *usecasesfakes.FakeInvestmentTransactionLister, updater *usecasesfakes.FakeInvestmentTransactionUpdater, deleter *usecasesfakes.FakeInvestmentTransactionDeleter) chi.Router {
+func newInvestmentTransactionRouter(creator *usecasesfakes.FakeInvestmentTransactionCreator, getter *usecasesfakes.FakeInvestmentTransactionGetter, lister *usecasesfakes.FakeInvestmentTransactionLister, updater *usecasesfakes.FakeInvestmentTransactionUpdater, deleter *usecasesfakes.FakeInvestmentTransactionDeleter) http.Handler {
 	logger := testLogger()
 	createUC := investmenttransaction.NewCreateInvestmentTransactionUseCase(creator, logger)
 	getUC := investmenttransaction.NewGetInvestmentTransactionUseCase(getter, logger)
@@ -25,11 +24,9 @@ func newInvestmentTransactionRouter(creator *usecasesfakes.FakeInvestmentTransac
 	updateUC := investmenttransaction.NewUpdateInvestmentTransactionUseCase(updater, logger)
 	deleteUC := investmenttransaction.NewDeleteInvestmentTransactionUseCase(deleter, logger)
 	h := rest.NewInvestmentTransactionHandler(&createUC, &getUC, &listUC, &updateUC, &deleteUC, logger)
-	r := chi.NewRouter()
-	r.Route("/accounts/{accountId}/investments/{investmentId}/transactions", func(r chi.Router) {
-		r.Mount("/", h.Router())
-	})
-	return r
+	mux := http.NewServeMux()
+	h.Register(mux, "/accounts/{accountId}/investments/{investmentId}/transactions")
+	return mux
 }
 
 func sampleTransaction(investmentId uuid.UUID) domain.InvestmentTransaction {
@@ -50,7 +47,8 @@ func TestInvestmentTransactionHandlerCreate(t *testing.T) {
 		})
 
 		require.Equal(t, http.StatusCreated, rec.Code)
-		_, calledInvestmentId, modelTx := creator.CreateArgsForCall(0)
+		_, calledAccountId, calledInvestmentId, modelTx := creator.CreateArgsForCall(0)
+		require.Equal(t, domain.Id(2), calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		require.Equal(t, domain.Buy, modelTx.Type)
 		require.Equal(t, domain.Money(1000), modelTx.Quantity)
@@ -75,7 +73,7 @@ func TestInvestmentTransactionHandlerCreate(t *testing.T) {
 		})
 
 		require.Equal(t, http.StatusCreated, rec.Code)
-		_, _, modelTx := creator.CreateArgsForCall(0)
+		_, _, _, modelTx := creator.CreateArgsForCall(0)
 		require.Equal(t, domain.Deposit, modelTx.Type)
 		require.Equal(t, domain.Money(50000), modelTx.Amount)
 	})
@@ -112,6 +110,17 @@ func TestInvestmentTransactionHandlerCreate(t *testing.T) {
 		require.Equal(t, http.StatusBadRequest, rec.Code)
 		require.Equal(t, 0, creator.CreateCallCount())
 	})
+
+	t.Run("returns 400 on invalid account id", func(t *testing.T) {
+		creator := &usecasesfakes.FakeInvestmentTransactionCreator{}
+		r := newInvestmentTransactionRouter(creator, nil, nil, nil, nil)
+
+		rec := doRequest(t, r, http.MethodPost, "/accounts/abc/investments/"+investmentId.String()+"/transactions", map[string]string{
+			"type": "Deposit", "amount": "10",
+		})
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Equal(t, 0, creator.CreateCallCount())
+	})
 }
 
 func TestInvestmentTransactionHandlerGet(t *testing.T) {
@@ -126,7 +135,8 @@ func TestInvestmentTransactionHandlerGet(t *testing.T) {
 		rec := doRequest(t, r, http.MethodGet, "/accounts/2/investments/"+investmentId.String()+"/transactions/"+tx.Id.String(), nil)
 
 		require.Equal(t, http.StatusOK, rec.Code)
-		_, calledInvestmentId, calledId := getter.GetArgsForCall(0)
+		_, calledAccountId, calledInvestmentId, calledId := getter.GetArgsForCall(0)
+		require.Equal(t, domain.Id(2), calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		require.Equal(t, tx.Id, calledId)
 		var resp map[string]any
@@ -155,7 +165,8 @@ func TestInvestmentTransactionHandlerList(t *testing.T) {
 		rec := doRequest(t, r, http.MethodGet, "/accounts/2/investments/"+investmentId.String()+"/transactions", nil)
 
 		require.Equal(t, http.StatusOK, rec.Code)
-		_, calledInvestmentId := lister.ListArgsForCall(0)
+		_, calledAccountId, calledInvestmentId := lister.ListArgsForCall(0)
+		require.Equal(t, domain.Id(2), calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		var resp []map[string]any
 		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
@@ -175,7 +186,8 @@ func TestInvestmentTransactionHandlerUpdate(t *testing.T) {
 		rec := doRequest(t, r, http.MethodPatch, "/accounts/2/investments/"+investmentId.String()+"/transactions/"+txId.String(), map[string]string{"price": "120.00"})
 
 		require.Equal(t, http.StatusNoContent, rec.Code)
-		_, calledInvestmentId, calledId, patch := updater.UpdateArgsForCall(0)
+		_, calledAccountId, calledInvestmentId, calledId, patch := updater.UpdateArgsForCall(0)
+		require.Equal(t, domain.Id(2), calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		require.Equal(t, txId, calledId)
 		require.NotNil(t, patch.Price)
@@ -205,7 +217,8 @@ func TestInvestmentTransactionHandlerDelete(t *testing.T) {
 		rec := doRequest(t, r, http.MethodDelete, "/accounts/2/investments/"+investmentId.String()+"/transactions/"+txId.String(), nil)
 
 		require.Equal(t, http.StatusNoContent, rec.Code)
-		_, calledInvestmentId, calledId := deleter.DeleteArgsForCall(0)
+		_, calledAccountId, calledInvestmentId, calledId := deleter.DeleteArgsForCall(0)
+		require.Equal(t, domain.Id(2), calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		require.Equal(t, txId, calledId)
 	})

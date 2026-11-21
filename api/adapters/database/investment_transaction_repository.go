@@ -18,7 +18,14 @@ func NewInvestmentTransactionRepository(db *gorm.DB) InvestmentTransactionReposi
 	return InvestmentTransactionRepository{db: db}
 }
 
-func (r *InvestmentTransactionRepository) Create(ctx context.Context, investmentId uuid.UUID, tx domain.InvestmentTransaction) (*uuid.UUID, error) {
+// accountScope restricts a transaction query to investments owned by the given
+// account (transactions carry no account_id of their own).
+const accountScope = "investment_id IN (SELECT id FROM investments WHERE account_id = ?)"
+
+func (r *InvestmentTransactionRepository) Create(ctx context.Context, accountId domain.Id, investmentId uuid.UUID, tx domain.InvestmentTransaction) (*uuid.UUID, error) {
+	if _, err := gorm.G[Investment](r.db).Where("id = ? AND account_id = ?", investmentId, accountId).First(ctx); err != nil {
+		return nil, app_errors.NewResourceNotFoundError("Investment", investmentId.String())
+	}
 	tx.InvestmentId = investmentId
 	if tx.Id == uuid.Nil {
 		tx.Id = uuid.New()
@@ -30,7 +37,7 @@ func (r *InvestmentTransactionRepository) Create(ctx context.Context, investment
 	return &model.ID, nil
 }
 
-func (r *InvestmentTransactionRepository) Update(ctx context.Context, investmentId, id uuid.UUID, update domain.InvestmentTransactionPatch) error {
+func (r *InvestmentTransactionRepository) Update(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID, update domain.InvestmentTransactionPatch) error {
 	assignments := map[string]interface{}{}
 	if update.Type != nil {
 		assignments["type"] = *update.Type
@@ -54,7 +61,7 @@ func (r *InvestmentTransactionRepository) Update(ctx context.Context, investment
 		return nil
 	}
 	if rowsAffected, err := gorm.G[InvestmentTransaction](r.db).
-		Where("id = ? AND investment_id = ?", id, investmentId).
+		Where("id = ? AND investment_id = ? AND "+accountScope, id, investmentId, accountId).
 		Set(clause.Assignments(assignments)).Update(ctx); err != nil {
 		return err
 	} else if rowsAffected == 0 {
@@ -63,8 +70,8 @@ func (r *InvestmentTransactionRepository) Update(ctx context.Context, investment
 	return nil
 }
 
-func (r *InvestmentTransactionRepository) Get(ctx context.Context, investmentId, id uuid.UUID) (*domain.InvestmentTransaction, error) {
-	if tx, err := gorm.G[InvestmentTransaction](r.db).Where("id = ? AND investment_id = ?", id, investmentId).First(ctx); err != nil {
+func (r *InvestmentTransactionRepository) Get(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) (*domain.InvestmentTransaction, error) {
+	if tx, err := gorm.G[InvestmentTransaction](r.db).Where("id = ? AND investment_id = ? AND "+accountScope, id, investmentId, accountId).First(ctx); err != nil {
 		return nil, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String())
 	} else {
 		transaction := dbInvestmentTransactionToDomainInvestmentTransaction(tx)
@@ -72,8 +79,8 @@ func (r *InvestmentTransactionRepository) Get(ctx context.Context, investmentId,
 	}
 }
 
-func (r *InvestmentTransactionRepository) List(ctx context.Context, investmentId uuid.UUID) ([]domain.InvestmentTransaction, error) {
-	transactions, err := gorm.G[InvestmentTransaction](r.db).Where("investment_id = ?", investmentId).Find(ctx)
+func (r *InvestmentTransactionRepository) List(ctx context.Context, accountId domain.Id, investmentId uuid.UUID) ([]domain.InvestmentTransaction, error) {
+	transactions, err := gorm.G[InvestmentTransaction](r.db).Where("investment_id = ? AND "+accountScope, investmentId, accountId).Find(ctx)
 	if err != nil {
 		return []domain.InvestmentTransaction{}, err
 	}
@@ -84,8 +91,8 @@ func (r *InvestmentTransactionRepository) List(ctx context.Context, investmentId
 	return modelTransactions, nil
 }
 
-func (r *InvestmentTransactionRepository) Delete(ctx context.Context, investmentId, id uuid.UUID) error {
-	if rowsAffected, err := gorm.G[InvestmentTransaction](r.db).Where("id = ? AND investment_id = ?", id, investmentId).Delete(ctx); err != nil {
+func (r *InvestmentTransactionRepository) Delete(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) error {
+	if rowsAffected, err := gorm.G[InvestmentTransaction](r.db).Where("id = ? AND investment_id = ? AND "+accountScope, id, investmentId, accountId).Delete(ctx); err != nil {
 		return err
 	} else if rowsAffected == 0 {
 		return app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String())

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
@@ -92,15 +91,13 @@ func NewInvestmentHandler(create investmentCreator, get investmentGetter, list i
 	return &InvestmentHandler{create, get, list, update, del, logger}
 }
 
-// Router mounts the investment routes under /accounts/{accountId}/investments.
-func (h *InvestmentHandler) Router() chi.Router {
-	r := chi.NewRouter()
-	r.Post("/", h.Create)
-	r.Get("/", h.List)
-	r.Get("/{investmentId}", h.Get)
-	r.Patch("/{investmentId}", h.Update)
-	r.Delete("/{investmentId}", h.Delete)
-	return r
+// Register mounts the investment routes under prefix (e.g. "/accounts/{accountId}/investments").
+func (h *InvestmentHandler) Register(mux *http.ServeMux, prefix string) {
+	mux.HandleFunc("POST "+prefix, h.Create)
+	mux.HandleFunc("GET "+prefix, h.List)
+	mux.HandleFunc("GET "+prefix+"/{investmentId}", h.Get)
+	mux.HandleFunc("PATCH "+prefix+"/{investmentId}", h.Update)
+	mux.HandleFunc("DELETE "+prefix+"/{investmentId}", h.Delete)
 }
 
 func (h *InvestmentHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -224,7 +221,7 @@ func (h *InvestmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // --- shared helpers ---
 
 func parseUUIDParam(w http.ResponseWriter, r *http.Request, name string) (uuid.UUID, bool) {
-	raw := chi.URLParam(r, name)
+	raw := r.PathValue(name)
 	id, err := uuid.Parse(raw)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid "+name+" parameter")

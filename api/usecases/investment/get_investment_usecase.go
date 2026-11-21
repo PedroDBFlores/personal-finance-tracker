@@ -26,7 +26,7 @@ func (u *GetInvestmentUseCase) Execute(ctx context.Context, accountId domain.Id,
 		return nil, err
 	}
 	u.logger.DebugContext(ctx, "listing transactions to calculate current value", slog.Any("investmentId", id))
-	transactions, err := u.txLister.List(ctx, id)
+	transactions, err := u.txLister.List(ctx, accountId, id)
 	if err != nil {
 		return nil, err
 	}

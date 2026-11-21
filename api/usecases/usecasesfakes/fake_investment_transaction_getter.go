@@ -11,7 +11,7 @@ import (
 )
 
 type FakeInvestmentTransactionGetter struct {
-	GetStub        func(context.Context, uuid.UUID, uuid.UUID) (*domain.InvestmentTransaction, error)
+	GetStub        func(context.Context, domain.Id, uuid.UUID, uuid.UUID) (*domain.InvestmentTransaction, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []FakeInvestmentTransactionGetterGetArgs
 	getReturns     struct {
@@ -30,20 +30,21 @@ type FakeInvestmentTransactionGetter struct {
 // FakeInvestmentTransactionGetterGetArgs holds the arguments of one call to Get.
 type FakeInvestmentTransactionGetterGetArgs struct {
 	Arg1 context.Context
-	Arg2 uuid.UUID
+	Arg2 domain.Id
 	Arg3 uuid.UUID
+	Arg4 uuid.UUID
 }
 
-func (fake *FakeInvestmentTransactionGetter) Get(arg1 context.Context, arg2 uuid.UUID, arg3 uuid.UUID) (*domain.InvestmentTransaction, error) {
+func (fake *FakeInvestmentTransactionGetter) Get(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID, arg4 uuid.UUID) (*domain.InvestmentTransaction, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
-	fake.getArgsForCall = append(fake.getArgsForCall, FakeInvestmentTransactionGetterGetArgs{arg1, arg2, arg3})
+	fake.getArgsForCall = append(fake.getArgsForCall, FakeInvestmentTransactionGetterGetArgs{arg1, arg2, arg3, arg4})
 	stub := fake.GetStub
 	fakeReturns := fake.getReturns
-	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("Get", []interface{}{arg1, arg2, arg3, arg4})
 	fake.getMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -57,17 +58,17 @@ func (fake *FakeInvestmentTransactionGetter) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeInvestmentTransactionGetter) GetCalls(stub func(context.Context, uuid.UUID, uuid.UUID) (*domain.InvestmentTransaction, error)) {
+func (fake *FakeInvestmentTransactionGetter) GetCalls(stub func(context.Context, domain.Id, uuid.UUID, uuid.UUID) (*domain.InvestmentTransaction, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeInvestmentTransactionGetter) GetArgsForCall(i int) (context.Context, uuid.UUID, uuid.UUID) {
+func (fake *FakeInvestmentTransactionGetter) GetArgsForCall(i int) (context.Context, domain.Id, uuid.UUID, uuid.UUID) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3, argsForCall.Arg4
 }
 
 func (fake *FakeInvestmentTransactionGetter) GetArgs() []FakeInvestmentTransactionGetterGetArgs {

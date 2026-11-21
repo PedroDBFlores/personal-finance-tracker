@@ -18,6 +18,7 @@ import (
 func TestListInvestmentTransactionsUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
+	accountId := domain.Id(7)
 	investmentId := uuid.New()
 
 	t.Run("lists transactions of an investment", func(t *testing.T) {
@@ -26,13 +27,14 @@ func TestListInvestmentTransactionsUseCase(t *testing.T) {
 		lister.ListReturns([]domain.InvestmentTransaction{tx}, nil)
 		useCase := investmenttransaction.NewListInvestmentTransactionsUseCase(&lister, logger)
 
-		dtos, err := useCase.Execute(ctx, investmentId)
+		dtos, err := useCase.Execute(ctx, accountId, investmentId)
 		require.NoError(t, err)
 		require.Len(t, dtos, 1)
 		require.Equal(t, domain.Buy, dtos[0].Type)
 
-		ctxArg, calledInvestmentId := lister.ListArgsForCall(0)
+		ctxArg, calledAccountId, calledInvestmentId := lister.ListArgsForCall(0)
 		require.Equal(t, ctx, ctxArg)
+		require.Equal(t, accountId, calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 	})
 
@@ -41,7 +43,7 @@ func TestListInvestmentTransactionsUseCase(t *testing.T) {
 		lister.ListReturns(nil, app_errors.NewResourceNotFoundError("InvestmentTransaction", "1"))
 		useCase := investmenttransaction.NewListInvestmentTransactionsUseCase(&lister, logger)
 
-		dtos, err := useCase.Execute(ctx, investmentId)
+		dtos, err := useCase.Execute(ctx, accountId, investmentId)
 		require.Error(t, err)
 		require.Empty(t, dtos)
 	})

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
+	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases/investmenttransaction"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases/usecasesfakes"
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,7 @@ import (
 func TestDeleteInvestmentTransactionUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
+	accountId := domain.Id(7)
 	investmentId := uuid.New()
 	txId := uuid.New()
 
@@ -24,11 +26,12 @@ func TestDeleteInvestmentTransactionUseCase(t *testing.T) {
 		deleter.DeleteReturns(nil)
 		useCase := investmenttransaction.NewDeleteInvestmentTransactionUseCase(&deleter, logger)
 
-		err := useCase.Execute(ctx, investmentId, txId)
+		err := useCase.Execute(ctx, accountId, investmentId, txId)
 		require.NoError(t, err)
 
-		ctxArg, calledInvestmentId, calledId := deleter.DeleteArgsForCall(0)
+		ctxArg, calledAccountId, calledInvestmentId, calledId := deleter.DeleteArgsForCall(0)
 		require.Equal(t, ctx, ctxArg)
+		require.Equal(t, accountId, calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		require.Equal(t, txId, calledId)
 	})
@@ -38,7 +41,7 @@ func TestDeleteInvestmentTransactionUseCase(t *testing.T) {
 		deleter.DeleteReturns(app_errors.NewResourceNotFoundError("InvestmentTransaction", txId.String()))
 		useCase := investmenttransaction.NewDeleteInvestmentTransactionUseCase(&deleter, logger)
 
-		err := useCase.Execute(ctx, investmentId, txId)
+		err := useCase.Execute(ctx, accountId, investmentId, txId)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", txId.String()))
 	})
 }

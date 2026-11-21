@@ -11,7 +11,7 @@ import (
 )
 
 type FakeInvestmentTransactionLister struct {
-	ListStub        func(context.Context, uuid.UUID) ([]domain.InvestmentTransaction, error)
+	ListStub        func(context.Context, domain.Id, uuid.UUID) ([]domain.InvestmentTransaction, error)
 	listMutex       sync.RWMutex
 	listArgsForCall []FakeInvestmentTransactionListerListArgs
 	listReturns     struct {
@@ -30,19 +30,20 @@ type FakeInvestmentTransactionLister struct {
 // FakeInvestmentTransactionListerListArgs holds the arguments of one call to List.
 type FakeInvestmentTransactionListerListArgs struct {
 	Arg1 context.Context
-	Arg2 uuid.UUID
+	Arg2 domain.Id
+	Arg3 uuid.UUID
 }
 
-func (fake *FakeInvestmentTransactionLister) List(arg1 context.Context, arg2 uuid.UUID) ([]domain.InvestmentTransaction, error) {
+func (fake *FakeInvestmentTransactionLister) List(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID) ([]domain.InvestmentTransaction, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
-	fake.listArgsForCall = append(fake.listArgsForCall, FakeInvestmentTransactionListerListArgs{arg1, arg2})
+	fake.listArgsForCall = append(fake.listArgsForCall, FakeInvestmentTransactionListerListArgs{arg1, arg2, arg3})
 	stub := fake.ListStub
 	fakeReturns := fake.listReturns
-	fake.recordInvocation("List", []interface{}{arg1, arg2})
+	fake.recordInvocation("List", []interface{}{arg1, arg2, arg3})
 	fake.listMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -56,17 +57,17 @@ func (fake *FakeInvestmentTransactionLister) ListCallCount() int {
 	return len(fake.listArgsForCall)
 }
 
-func (fake *FakeInvestmentTransactionLister) ListCalls(stub func(context.Context, uuid.UUID) ([]domain.InvestmentTransaction, error)) {
+func (fake *FakeInvestmentTransactionLister) ListCalls(stub func(context.Context, domain.Id, uuid.UUID) ([]domain.InvestmentTransaction, error)) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = stub
 }
 
-func (fake *FakeInvestmentTransactionLister) ListArgsForCall(i int) (context.Context, uuid.UUID) {
+func (fake *FakeInvestmentTransactionLister) ListArgsForCall(i int) (context.Context, domain.Id, uuid.UUID) {
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
 	argsForCall := fake.listArgsForCall[i]
-	return argsForCall.Arg1, argsForCall.Arg2
+	return argsForCall.Arg1, argsForCall.Arg2, argsForCall.Arg3
 }
 
 func (fake *FakeInvestmentTransactionLister) ListArgs() []FakeInvestmentTransactionListerListArgs {

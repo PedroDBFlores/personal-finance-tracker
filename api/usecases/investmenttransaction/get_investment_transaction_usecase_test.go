@@ -18,6 +18,7 @@ import (
 func TestGetInvestmentTransactionUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
+	accountId := domain.Id(7)
 	investmentId := uuid.New()
 	txId := uuid.New()
 
@@ -27,13 +28,14 @@ func TestGetInvestmentTransactionUseCase(t *testing.T) {
 		getter.GetReturns(&tx, nil)
 		useCase := investmenttransaction.NewGetInvestmentTransactionUseCase(&getter, logger)
 
-		dto, err := useCase.Execute(ctx, investmentId, txId)
+		dto, err := useCase.Execute(ctx, accountId, investmentId, txId)
 		require.NoError(t, err)
 		require.Equal(t, txId, dto.Id)
 		require.Equal(t, domain.Money(50000), dto.Amount)
 
-		ctxArg, calledInvestmentId, calledId := getter.GetArgsForCall(0)
+		ctxArg, calledAccountId, calledInvestmentId, calledId := getter.GetArgsForCall(0)
 		require.Equal(t, ctx, ctxArg)
+		require.Equal(t, accountId, calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		require.Equal(t, txId, calledId)
 	})
@@ -43,7 +45,7 @@ func TestGetInvestmentTransactionUseCase(t *testing.T) {
 		getter.GetReturns(nil, app_errors.NewResourceNotFoundError("InvestmentTransaction", txId.String()))
 		useCase := investmenttransaction.NewGetInvestmentTransactionUseCase(&getter, logger)
 
-		dto, err := useCase.Execute(ctx, investmentId, txId)
+		dto, err := useCase.Execute(ctx, accountId, investmentId, txId)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", txId.String()))
 		require.Nil(t, dto)
 	})

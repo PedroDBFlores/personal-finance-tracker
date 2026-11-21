@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/rest"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -16,7 +15,7 @@ import (
 )
 
 // newMovementRouter builds the movement routes with real usecases backed by fake ports.
-func newMovementRouter(creator *usecasesfakes.FakeMovementCreator, getter *usecasesfakes.FakeMovementGetter, lister *usecasesfakes.FakeMovementLister, updater *usecasesfakes.FakeMovementUpdater, deleter *usecasesfakes.FakeMovementDeleter) chi.Router {
+func newMovementRouter(creator *usecasesfakes.FakeMovementCreator, getter *usecasesfakes.FakeMovementGetter, lister *usecasesfakes.FakeMovementLister, updater *usecasesfakes.FakeMovementUpdater, deleter *usecasesfakes.FakeMovementDeleter) http.Handler {
 	logger := testLogger()
 	createUC := movement.NewCreateMovementUseCase(creator, logger)
 	getUC := movement.NewGetMovementUseCase(getter, logger)
@@ -24,11 +23,9 @@ func newMovementRouter(creator *usecasesfakes.FakeMovementCreator, getter *useca
 	updateUC := movement.NewUpdateMovementUseCase(updater, logger)
 	deleteUC := movement.NewDeleteMovementUseCase(deleter, logger)
 	h := rest.NewMovementHandler(&createUC, &getUC, &listUC, &updateUC, &deleteUC, logger)
-	r := chi.NewRouter()
-	r.Route("/accounts/{accountId}/movements", func(r chi.Router) {
-		r.Mount("/", h.Router())
-	})
-	return r
+	mux := http.NewServeMux()
+	h.Register(mux, "/accounts/{accountId}/movements")
+	return mux
 }
 
 func sampleMovement(accountId domain.Id) domain.Movement {

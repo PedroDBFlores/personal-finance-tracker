@@ -27,7 +27,7 @@ func (u *ListInvestmentsUseCase) Execute(ctx context.Context, accountId domain.I
 	listInvestmentDtos := make([]dtos.InvestmentDto, 0, len(investments))
 	for i := range investments {
 		u.logger.DebugContext(ctx, "listing transactions to calculate current value", slog.Any("investmentId", investments[i].Id))
-		transactions, err := u.txLister.List(ctx, investments[i].Id)
+		transactions, err := u.txLister.List(ctx, accountId, investments[i].Id)
 		if err != nil {
 			return []dtos.InvestmentDto{}, err
 		}

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
 )
@@ -83,15 +82,13 @@ func NewMovementHandler(create movementCreator, get movementGetter, list movemen
 	return &MovementHandler{create, get, list, update, del, logger}
 }
 
-// Router mounts the movement routes under /accounts/{accountId}/movements.
-func (h *MovementHandler) Router() chi.Router {
-	r := chi.NewRouter()
-	r.Post("/", h.Create)
-	r.Get("/", h.List)
-	r.Get("/{movementId}", h.Get)
-	r.Patch("/{movementId}", h.Update)
-	r.Delete("/{movementId}", h.Delete)
-	return r
+// Register mounts the movement routes under prefix (e.g. "/accounts/{accountId}/movements").
+func (h *MovementHandler) Register(mux *http.ServeMux, prefix string) {
+	mux.HandleFunc("POST "+prefix, h.Create)
+	mux.HandleFunc("GET "+prefix, h.List)
+	mux.HandleFunc("GET "+prefix+"/{movementId}", h.Get)
+	mux.HandleFunc("PATCH "+prefix+"/{movementId}", h.Update)
+	mux.HandleFunc("DELETE "+prefix+"/{movementId}", h.Delete)
 }
 
 func (h *MovementHandler) Create(w http.ResponseWriter, r *http.Request) {

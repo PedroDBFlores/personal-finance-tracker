@@ -17,6 +17,7 @@ import (
 func TestUpdateInvestmentTransactionUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
+	accountId := domain.Id(7)
 	investmentId := uuid.New()
 	txId := uuid.New()
 	description := "Updated description"
@@ -27,11 +28,12 @@ func TestUpdateInvestmentTransactionUseCase(t *testing.T) {
 		updater.UpdateReturns(nil)
 		useCase := investmenttransaction.NewUpdateInvestmentTransactionUseCase(&updater, logger)
 
-		err := useCase.Execute(ctx, investmentId, txId, patch)
+		err := useCase.Execute(ctx, accountId, investmentId, txId, patch)
 		require.NoError(t, err)
 
-		ctxArg, calledInvestmentId, calledId, calledPatch := updater.UpdateArgsForCall(0)
+		ctxArg, calledAccountId, calledInvestmentId, calledId, calledPatch := updater.UpdateArgsForCall(0)
 		require.Equal(t, ctx, ctxArg)
+		require.Equal(t, accountId, calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		require.Equal(t, txId, calledId)
 		require.Equal(t, patch, calledPatch)
@@ -42,7 +44,7 @@ func TestUpdateInvestmentTransactionUseCase(t *testing.T) {
 		updater.UpdateReturns(app_errors.NewResourceNotFoundError("InvestmentTransaction", txId.String()))
 		useCase := investmenttransaction.NewUpdateInvestmentTransactionUseCase(&updater, logger)
 
-		err := useCase.Execute(ctx, investmentId, txId, patch)
+		err := useCase.Execute(ctx, accountId, investmentId, txId, patch)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", txId.String()))
 	})
 }

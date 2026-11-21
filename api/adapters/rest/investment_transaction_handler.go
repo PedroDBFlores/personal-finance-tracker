@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
@@ -16,23 +15,23 @@ import (
 // Usecase interfaces the handlers depend on (satisfied by the usecase structs).
 
 type investmentTransactionCreator interface {
-	Execute(ctx context.Context, investmentId uuid.UUID, dto dtos.CreateInvestmentTransactionDto) (*uuid.UUID, error)
+	Execute(ctx context.Context, accountId domain.Id, investmentId uuid.UUID, dto dtos.CreateInvestmentTransactionDto) (*uuid.UUID, error)
 }
 
 type investmentTransactionGetter interface {
-	Execute(ctx context.Context, investmentId, id uuid.UUID) (*dtos.InvestmentTransactionDto, error)
+	Execute(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) (*dtos.InvestmentTransactionDto, error)
 }
 
 type investmentTransactionLister interface {
-	Execute(ctx context.Context, investmentId uuid.UUID) ([]dtos.InvestmentTransactionDto, error)
+	Execute(ctx context.Context, accountId domain.Id, investmentId uuid.UUID) ([]dtos.InvestmentTransactionDto, error)
 }
 
 type investmentTransactionUpdater interface {
-	Execute(ctx context.Context, investmentId, id uuid.UUID, update domain.InvestmentTransactionPatch) error
+	Execute(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID, update domain.InvestmentTransactionPatch) error
 }
 
 type investmentTransactionDeleter interface {
-	Execute(ctx context.Context, investmentId, id uuid.UUID) error
+	Execute(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) error
 }
 
 // --- JSON wire types ---
@@ -92,18 +91,21 @@ func NewInvestmentTransactionHandler(create investmentTransactionCreator, get in
 	return &InvestmentTransactionHandler{create, get, list, update, del, logger}
 }
 
-// Router mounts the transaction routes under /accounts/{accountId}/investments/{investmentId}/transactions.
-func (h *InvestmentTransactionHandler) Router() chi.Router {
-	r := chi.NewRouter()
-	r.Post("/", h.Create)
-	r.Get("/", h.List)
-	r.Get("/{transactionId}", h.Get)
-	r.Patch("/{transactionId}", h.Update)
-	r.Delete("/{transactionId}", h.Delete)
-	return r
+// Register mounts the transaction routes under prefix
+// (e.g. "/accounts/{accountId}/investments/{investmentId}/transactions").
+func (h *InvestmentTransactionHandler) Register(mux *http.ServeMux, prefix string) {
+	mux.HandleFunc("POST "+prefix, h.Create)
+	mux.HandleFunc("GET "+prefix, h.List)
+	mux.HandleFunc("GET "+prefix+"/{transactionId}", h.Get)
+	mux.HandleFunc("PATCH "+prefix+"/{transactionId}", h.Update)
+	mux.HandleFunc("DELETE "+prefix+"/{transactionId}", h.Delete)
 }
 
 func (h *InvestmentTransactionHandler) Create(w http.ResponseWriter, r *http.Request) {
+	accountId, ok := parseIdParam(w, r, "accountId")
+	if !ok {
+		return
+	}
 	investmentId, ok := parseUUIDParam(w, r, "investmentId")
 	if !ok {
 		return
@@ -134,7 +136,7 @@ func (h *InvestmentTransactionHandler) Create(w http.ResponseWriter, r *http.Req
 		return
 	}
 	dto := dtos.NewCreateInvestmentTransactionDto(txType, amount, quantity, price, time.Now(), req.Description)
-	id, err := h.create.Execute(r.Context(), investmentId, dto)
+	id, err := h.create.Execute(r.Context(), accountId, investmentId, dto)
 	if err != nil {
 		writeUsecaseError(w, err)
 		return
@@ -144,6 +146,10 @@ func (h *InvestmentTransactionHandler) Create(w http.ResponseWriter, r *http.Req
 }
 
 func (h *InvestmentTransactionHandler) Get(w http.ResponseWriter, r *http.Request) {
+	accountId, ok := parseIdParam(w, r, "accountId")
+	if !ok {
+		return
+	}
 	investmentId, ok := parseUUIDParam(w, r, "investmentId")
 	if !ok {
 		return
@@ -152,7 +158,7 @@ func (h *InvestmentTransactionHandler) Get(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	tx, err := h.get.Execute(r.Context(), investmentId, id)
+	tx, err := h.get.Execute(r.Context(), accountId, investmentId, id)
 	if err != nil {
 		writeUsecaseError(w, err)
 		return
@@ -161,11 +167,15 @@ func (h *InvestmentTransactionHandler) Get(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *InvestmentTransactionHandler) List(w http.ResponseWriter, r *http.Request) {
+	accountId, ok := parseIdParam(w, r, "accountId")
+	if !ok {
+		return
+	}
 	investmentId, ok := parseUUIDParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
-	transactions, err := h.list.Execute(r.Context(), investmentId)
+	transactions, err := h.list.Execute(r.Context(), accountId, investmentId)
 	if err != nil {
 		writeUsecaseError(w, err)
 		return
@@ -178,6 +188,10 @@ func (h *InvestmentTransactionHandler) List(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *InvestmentTransactionHandler) Update(w http.ResponseWriter, r *http.Request) {
+	accountId, ok := parseIdParam(w, r, "accountId")
+	if !ok {
+		return
+	}
 	investmentId, ok := parseUUIDParam(w, r, "investmentId")
 	if !ok {
 		return
@@ -224,7 +238,7 @@ func (h *InvestmentTransactionHandler) Update(w http.ResponseWriter, r *http.Req
 		}
 		patch.Price = &price
 	}
-	if err := h.update.Execute(r.Context(), investmentId, id, patch); err != nil {
+	if err := h.update.Execute(r.Context(), accountId, investmentId, id, patch); err != nil {
 		writeUsecaseError(w, err)
 		return
 	}
@@ -232,6 +246,10 @@ func (h *InvestmentTransactionHandler) Update(w http.ResponseWriter, r *http.Req
 }
 
 func (h *InvestmentTransactionHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	accountId, ok := parseIdParam(w, r, "accountId")
+	if !ok {
+		return
+	}
 	investmentId, ok := parseUUIDParam(w, r, "investmentId")
 	if !ok {
 		return
@@ -240,7 +258,7 @@ func (h *InvestmentTransactionHandler) Delete(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	if err := h.del.Execute(r.Context(), investmentId, id); err != nil {
+	if err := h.del.Execute(r.Context(), accountId, investmentId, id); err != nil {
 		writeUsecaseError(w, err)
 		return
 	}

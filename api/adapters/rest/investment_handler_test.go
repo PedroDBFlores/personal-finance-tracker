@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/rest"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
@@ -17,7 +16,7 @@ import (
 )
 
 // newInvestmentRouter builds the investment routes with real usecases backed by fake ports.
-func newInvestmentRouter(creator *usecasesfakes.FakeInvestmentCreator, getter *usecasesfakes.FakeInvestmentGetter, lister *usecasesfakes.FakeInvestmentLister, updater *usecasesfakes.FakeInvestmentUpdater, deleter *usecasesfakes.FakeInvestmentDeleter, txLister *usecasesfakes.FakeInvestmentTransactionLister) chi.Router {
+func newInvestmentRouter(creator *usecasesfakes.FakeInvestmentCreator, getter *usecasesfakes.FakeInvestmentGetter, lister *usecasesfakes.FakeInvestmentLister, updater *usecasesfakes.FakeInvestmentUpdater, deleter *usecasesfakes.FakeInvestmentDeleter, txLister *usecasesfakes.FakeInvestmentTransactionLister) http.Handler {
 	logger := testLogger()
 	createUC := investment.NewCreateInvestmentUseCase(creator, logger)
 	getUC := investment.NewGetInvestmentUseCase(getter, txLister, logger)
@@ -25,11 +24,9 @@ func newInvestmentRouter(creator *usecasesfakes.FakeInvestmentCreator, getter *u
 	updateUC := investment.NewUpdateInvestmentUseCase(updater, logger)
 	deleteUC := investment.NewDeleteInvestmentUseCase(deleter, logger)
 	h := rest.NewInvestmentHandler(&createUC, &getUC, &listUC, &updateUC, &deleteUC, logger)
-	r := chi.NewRouter()
-	r.Route("/accounts/{accountId}/investments", func(r chi.Router) {
-		r.Mount("/", h.Router())
-	})
-	return r
+	mux := http.NewServeMux()
+	h.Register(mux, "/accounts/{accountId}/investments")
+	return mux
 }
 
 func sampleInvestment(accountId domain.Id, id uuid.UUID) domain.Investment {
