@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"gorm.io/gorm"
@@ -22,22 +21,20 @@ func NewInvestmentTransactionRepository(db *gorm.DB) InvestmentTransactionReposi
 // account (transactions carry no account_id of their own).
 const accountScope = "investment_id IN (SELECT id FROM investments WHERE account_id = ?)"
 
-func (r *InvestmentTransactionRepository) Create(ctx context.Context, accountId domain.Id, investmentId uuid.UUID, tx domain.InvestmentTransaction) (*uuid.UUID, error) {
+func (r *InvestmentTransactionRepository) Create(ctx context.Context, accountId domain.Id, investmentId domain.Id, tx domain.InvestmentTransaction) (*domain.Id, error) {
 	if _, err := gorm.G[Investment](r.db).Where("id = ? AND account_id = ?", investmentId, accountId).First(ctx); err != nil {
 		return nil, app_errors.NewResourceNotFoundError("Investment", investmentId.String())
 	}
 	tx.InvestmentId = investmentId
-	if tx.Id == uuid.Nil {
-		tx.Id = uuid.New()
-	}
 	model := domainInvestmentTransactionToDBInvestmentTransaction(tx)
 	if err := gorm.G[InvestmentTransaction](r.db).Create(ctx, &model); err != nil {
 		return nil, err
 	}
-	return &model.ID, nil
+	id := domain.Id(model.ID)
+	return &id, nil
 }
 
-func (r *InvestmentTransactionRepository) Update(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID, update domain.InvestmentTransactionPatch) error {
+func (r *InvestmentTransactionRepository) Update(ctx context.Context, accountId domain.Id, investmentId, id domain.Id, update domain.InvestmentTransactionPatch) error {
 	assignments := map[string]interface{}{}
 	if update.Type != nil {
 		assignments["type"] = *update.Type
@@ -70,7 +67,7 @@ func (r *InvestmentTransactionRepository) Update(ctx context.Context, accountId 
 	return nil
 }
 
-func (r *InvestmentTransactionRepository) Get(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) (*domain.InvestmentTransaction, error) {
+func (r *InvestmentTransactionRepository) Get(ctx context.Context, accountId domain.Id, investmentId, id domain.Id) (*domain.InvestmentTransaction, error) {
 	if tx, err := gorm.G[InvestmentTransaction](r.db).Where("id = ? AND investment_id = ? AND "+accountScope, id, investmentId, accountId).First(ctx); err != nil {
 		return nil, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String())
 	} else {
@@ -79,7 +76,7 @@ func (r *InvestmentTransactionRepository) Get(ctx context.Context, accountId dom
 	}
 }
 
-func (r *InvestmentTransactionRepository) List(ctx context.Context, accountId domain.Id, investmentId uuid.UUID) ([]domain.InvestmentTransaction, error) {
+func (r *InvestmentTransactionRepository) List(ctx context.Context, accountId domain.Id, investmentId domain.Id) ([]domain.InvestmentTransaction, error) {
 	transactions, err := gorm.G[InvestmentTransaction](r.db).Where("investment_id = ? AND "+accountScope, investmentId, accountId).Find(ctx)
 	if err != nil {
 		return []domain.InvestmentTransaction{}, err
@@ -91,7 +88,7 @@ func (r *InvestmentTransactionRepository) List(ctx context.Context, accountId do
 	return modelTransactions, nil
 }
 
-func (r *InvestmentTransactionRepository) Delete(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) error {
+func (r *InvestmentTransactionRepository) Delete(ctx context.Context, accountId domain.Id, investmentId, id domain.Id) error {
 	if rowsAffected, err := gorm.G[InvestmentTransaction](r.db).Where("id = ? AND investment_id = ? AND "+accountScope, id, investmentId, accountId).Delete(ctx); err != nil {
 		return err
 	} else if rowsAffected == 0 {
@@ -102,8 +99,8 @@ func (r *InvestmentTransactionRepository) Delete(ctx context.Context, accountId 
 
 func dbInvestmentTransactionToDomainInvestmentTransaction(t InvestmentTransaction) domain.InvestmentTransaction {
 	d := domain.NewInvestmentTransaction(
-		t.ID,
-		t.InvestmentId,
+		domain.Id(t.ID),
+		domain.Id(t.InvestmentId),
 		t.Type,
 		t.Amount,
 		t.Quantity,
@@ -116,8 +113,8 @@ func dbInvestmentTransactionToDomainInvestmentTransaction(t InvestmentTransactio
 
 func domainInvestmentTransactionToDBInvestmentTransaction(t domain.InvestmentTransaction) InvestmentTransaction {
 	return InvestmentTransaction{
-		ID:           t.Id,
-		InvestmentId: t.InvestmentId,
+		ID:           uint(t.Id),
+		InvestmentId: uint(t.InvestmentId),
 		Type:         t.Type,
 		Amount:       t.Amount,
 		Quantity:     t.Quantity,

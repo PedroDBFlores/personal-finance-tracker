@@ -5,13 +5,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
 
 type FakeInvestmentTransactionUpdater struct {
-	UpdateStub        func(context.Context, domain.Id, uuid.UUID, uuid.UUID, domain.InvestmentTransactionPatch) error
+	UpdateStub        func(context.Context, domain.Id, domain.Id, domain.Id, domain.InvestmentTransactionPatch) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []FakeInvestmentTransactionUpdaterUpdateArgs
 	updateReturns     struct {
@@ -29,12 +28,12 @@ type FakeInvestmentTransactionUpdater struct {
 type FakeInvestmentTransactionUpdaterUpdateArgs struct {
 	Arg1 context.Context
 	Arg2 domain.Id
-	Arg3 uuid.UUID
-	Arg4 uuid.UUID
+	Arg3 domain.Id
+	Arg4 domain.Id
 	Arg5 domain.InvestmentTransactionPatch
 }
 
-func (fake *FakeInvestmentTransactionUpdater) Update(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID, arg4 uuid.UUID, arg5 domain.InvestmentTransactionPatch) error {
+func (fake *FakeInvestmentTransactionUpdater) Update(arg1 context.Context, arg2 domain.Id, arg3 domain.Id, arg4 domain.Id, arg5 domain.InvestmentTransactionPatch) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeInvestmentTransactionUpdaterUpdateArgs{arg1, arg2, arg3, arg4, arg5})
@@ -57,13 +56,13 @@ func (fake *FakeInvestmentTransactionUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeInvestmentTransactionUpdater) UpdateCalls(stub func(context.Context, domain.Id, uuid.UUID, uuid.UUID, domain.InvestmentTransactionPatch) error) {
+func (fake *FakeInvestmentTransactionUpdater) UpdateCalls(stub func(context.Context, domain.Id, domain.Id, domain.Id, domain.InvestmentTransactionPatch) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeInvestmentTransactionUpdater) UpdateArgsForCall(i int) (context.Context, domain.Id, uuid.UUID, uuid.UUID, domain.InvestmentTransactionPatch) {
+func (fake *FakeInvestmentTransactionUpdater) UpdateArgsForCall(i int) (context.Context, domain.Id, domain.Id, domain.Id, domain.InvestmentTransactionPatch) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]

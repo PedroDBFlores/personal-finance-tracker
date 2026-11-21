@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
@@ -18,7 +17,7 @@ func NewDeleteInvestmentTransactionUseCase(deleter usecases.InvestmentTransactio
 	return DeleteInvestmentTransactionUseCase{deleter, logger}
 }
 
-func (u *DeleteInvestmentTransactionUseCase) Execute(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) error {
+func (u *DeleteInvestmentTransactionUseCase) Execute(ctx context.Context, accountId domain.Id, investmentId, id domain.Id) error {
 	u.logger.DebugContext(ctx, "deleting investment transaction", slog.Any("accountId", accountId), slog.Any("investmentId", investmentId), slog.Any("id", id))
 	return u.deleter.Delete(ctx, accountId, investmentId, id)
 }

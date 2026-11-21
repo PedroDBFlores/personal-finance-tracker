@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases/investmenttransaction"
@@ -19,11 +18,11 @@ func TestListInvestmentTransactionsUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
 	accountId := domain.Id(7)
-	investmentId := uuid.New()
+	investmentId := domain.NewId()
 
 	t.Run("lists transactions of an investment", func(t *testing.T) {
 		lister := usecasesfakes.FakeInvestmentTransactionLister{}
-		tx := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
+		tx := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
 		lister.ListReturns([]domain.InvestmentTransaction{tx}, nil)
 		useCase := investmenttransaction.NewListInvestmentTransactionsUseCase(&lister, logger)
 

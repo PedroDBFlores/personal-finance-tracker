@@ -4,14 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewInvestmentTransaction(t *testing.T) {
-	id := uuid.New()
-	investmentId := uuid.New()
+	id := domain.NewId()
+	investmentId := domain.NewId()
 	date := time.Now()
 
 	t.Run("creates a buy transaction", func(t *testing.T) {

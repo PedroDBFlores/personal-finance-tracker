@@ -5,13 +5,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
 
 type FakeInvestmentUpdater struct {
-	UpdateStub        func(context.Context, domain.Id, uuid.UUID, domain.InvestmentPatch) error
+	UpdateStub        func(context.Context, domain.Id, domain.Id, domain.InvestmentPatch) error
 	updateMutex       sync.RWMutex
 	updateArgsForCall []FakeInvestmentUpdaterUpdateArgs
 	updateReturns     struct {
@@ -29,11 +28,11 @@ type FakeInvestmentUpdater struct {
 type FakeInvestmentUpdaterUpdateArgs struct {
 	Arg1 context.Context
 	Arg2 domain.Id
-	Arg3 uuid.UUID
+	Arg3 domain.Id
 	Arg4 domain.InvestmentPatch
 }
 
-func (fake *FakeInvestmentUpdater) Update(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID, arg4 domain.InvestmentPatch) error {
+func (fake *FakeInvestmentUpdater) Update(arg1 context.Context, arg2 domain.Id, arg3 domain.Id, arg4 domain.InvestmentPatch) error {
 	fake.updateMutex.Lock()
 	ret, specificReturn := fake.updateReturnsOnCall[len(fake.updateArgsForCall)]
 	fake.updateArgsForCall = append(fake.updateArgsForCall, FakeInvestmentUpdaterUpdateArgs{arg1, arg2, arg3, arg4})
@@ -56,13 +55,13 @@ func (fake *FakeInvestmentUpdater) UpdateCallCount() int {
 	return len(fake.updateArgsForCall)
 }
 
-func (fake *FakeInvestmentUpdater) UpdateCalls(stub func(context.Context, domain.Id, uuid.UUID, domain.InvestmentPatch) error) {
+func (fake *FakeInvestmentUpdater) UpdateCalls(stub func(context.Context, domain.Id, domain.Id, domain.InvestmentPatch) error) {
 	fake.updateMutex.Lock()
 	defer fake.updateMutex.Unlock()
 	fake.UpdateStub = stub
 }
 
-func (fake *FakeInvestmentUpdater) UpdateArgsForCall(i int) (context.Context, domain.Id, uuid.UUID, domain.InvestmentPatch) {
+func (fake *FakeInvestmentUpdater) UpdateArgsForCall(i int) (context.Context, domain.Id, domain.Id, domain.InvestmentPatch) {
 	fake.updateMutex.RLock()
 	defer fake.updateMutex.RUnlock()
 	argsForCall := fake.updateArgsForCall[i]

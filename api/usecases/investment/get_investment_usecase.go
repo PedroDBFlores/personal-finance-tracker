@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
@@ -20,7 +19,7 @@ func NewGetInvestmentUseCase(getter usecases.InvestmentGetter, txLister usecases
 	return GetInvestmentUseCase{getter, txLister, logger}
 }
 
-func (u *GetInvestmentUseCase) Execute(ctx context.Context, accountId domain.Id, id uuid.UUID) (*dtos.InvestmentDto, error) {
+func (u *GetInvestmentUseCase) Execute(ctx context.Context, accountId domain.Id, id domain.Id) (*dtos.InvestmentDto, error) {
 	investment, err := u.getter.Get(ctx, accountId, id)
 	if err != nil {
 		return nil, err

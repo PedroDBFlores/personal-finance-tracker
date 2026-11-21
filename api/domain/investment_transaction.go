@@ -2,16 +2,14 @@ package domain
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 // InvestmentTransaction represents a transaction for an investment (e.g., Buy, Sell, Deposit, Withdraw)
 type InvestmentTransaction struct {
 	// Id represents the unique transaction identifier.
-	Id uuid.UUID
+	Id Id
 	// InvestmentId links the transaction to an investment.
-	InvestmentId uuid.UUID
+	InvestmentId Id
 	// Type defines the type of transaction.
 	Type InvestmentTransactionType
 	// Amount represents the monetary value of the transaction (for Deposit/Withdraw).
@@ -33,8 +31,8 @@ type InvestmentTransaction struct {
 // For Deposit/Withdraw, use Amount and set Quantity/Price to 0.
 // For Buy/Sell, use Quantity and Price.
 func NewInvestmentTransaction(
-	id uuid.UUID,
-	investmentId uuid.UUID,
+	id Id,
+	investmentId Id,
 	txType InvestmentTransactionType,
 	amount Money,
 	quantity Money,

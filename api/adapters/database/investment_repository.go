@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"gorm.io/gorm"
@@ -18,19 +17,17 @@ func NewInvestmentRepository(db *gorm.DB) InvestmentRepository {
 	return InvestmentRepository{db: db}
 }
 
-func (r *InvestmentRepository) Create(ctx context.Context, accountId domain.Id, investment domain.Investment) (*uuid.UUID, error) {
+func (r *InvestmentRepository) Create(ctx context.Context, accountId domain.Id, investment domain.Investment) (*domain.Id, error) {
 	investment.AccountId = accountId
-	if investment.Id == uuid.Nil {
-		investment.Id = uuid.New()
-	}
 	inv := domainInvestmentToDBInvestment(investment)
 	if err := gorm.G[Investment](r.db).Create(ctx, &inv); err != nil {
 		return nil, err
 	}
-	return &inv.ID, nil
+	id := domain.Id(inv.ID)
+	return &id, nil
 }
 
-func (r *InvestmentRepository) Update(ctx context.Context, accountId domain.Id, id uuid.UUID, update domain.InvestmentPatch) error {
+func (r *InvestmentRepository) Update(ctx context.Context, accountId domain.Id, id domain.Id, update domain.InvestmentPatch) error {
 	assignments := map[string]interface{}{}
 	if update.Name != nil {
 		assignments["name"] = *update.Name
@@ -63,7 +60,7 @@ func (r *InvestmentRepository) Update(ctx context.Context, accountId domain.Id, 
 	return nil
 }
 
-func (r *InvestmentRepository) Get(ctx context.Context, accountId domain.Id, id uuid.UUID) (*domain.Investment, error) {
+func (r *InvestmentRepository) Get(ctx context.Context, accountId domain.Id, id domain.Id) (*domain.Investment, error) {
 	if inv, err := gorm.G[Investment](r.db).Where("id = ? AND account_id = ?", id, accountId).First(ctx); err != nil {
 		return nil, app_errors.NewResourceNotFoundError("Investment", id.String())
 	} else {
@@ -84,7 +81,7 @@ func (r *InvestmentRepository) List(ctx context.Context, accountId domain.Id) ([
 	return modelInvestments, nil
 }
 
-func (r *InvestmentRepository) Delete(ctx context.Context, accountId domain.Id, id uuid.UUID) error {
+func (r *InvestmentRepository) Delete(ctx context.Context, accountId domain.Id, id domain.Id) error {
 	if rowsAffected, err := gorm.G[Investment](r.db).Where("id = ? AND account_id = ?", id, accountId).Delete(ctx); err != nil {
 		return err
 	} else if rowsAffected == 0 {
@@ -95,7 +92,7 @@ func (r *InvestmentRepository) Delete(ctx context.Context, accountId domain.Id, 
 
 func dbInvestmentToDomainInvestment(i Investment) domain.Investment {
 	d := domain.NewInvestment(
-		i.ID,
+		domain.Id(i.ID),
 		domain.Id(i.AccountId),
 		i.Name,
 		i.Type,
@@ -109,7 +106,7 @@ func dbInvestmentToDomainInvestment(i Investment) domain.Investment {
 
 func domainInvestmentToDBInvestment(i domain.Investment) Investment {
 	return Investment{
-		ID:           i.Id,
+		ID:           uint(i.Id),
 		AccountId:    uint(i.AccountId),
 		Name:         i.Name,
 		Type:         i.Type,

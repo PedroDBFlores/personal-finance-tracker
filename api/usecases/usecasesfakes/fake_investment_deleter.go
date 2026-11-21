@@ -5,13 +5,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
 
 type FakeInvestmentDeleter struct {
-	DeleteStub        func(context.Context, domain.Id, uuid.UUID) error
+	DeleteStub        func(context.Context, domain.Id, domain.Id) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []FakeInvestmentDeleterDeleteArgs
 	deleteReturns     struct {
@@ -29,10 +28,10 @@ type FakeInvestmentDeleter struct {
 type FakeInvestmentDeleterDeleteArgs struct {
 	Arg1 context.Context
 	Arg2 domain.Id
-	Arg3 uuid.UUID
+	Arg3 domain.Id
 }
 
-func (fake *FakeInvestmentDeleter) Delete(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID) error {
+func (fake *FakeInvestmentDeleter) Delete(arg1 context.Context, arg2 domain.Id, arg3 domain.Id) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, FakeInvestmentDeleterDeleteArgs{arg1, arg2, arg3})
@@ -55,13 +54,13 @@ func (fake *FakeInvestmentDeleter) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeInvestmentDeleter) DeleteCalls(stub func(context.Context, domain.Id, uuid.UUID) error) {
+func (fake *FakeInvestmentDeleter) DeleteCalls(stub func(context.Context, domain.Id, domain.Id) error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
 }
 
-func (fake *FakeInvestmentDeleter) DeleteArgsForCall(i int) (context.Context, domain.Id, uuid.UUID) {
+func (fake *FakeInvestmentDeleter) DeleteArgsForCall(i int) (context.Context, domain.Id, domain.Id) {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	argsForCall := fake.deleteArgsForCall[i]

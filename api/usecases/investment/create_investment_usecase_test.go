@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
@@ -24,7 +23,7 @@ func TestCreateInvestmentUseCase(t *testing.T) {
 
 	t.Run("creates an investment successfully", func(t *testing.T) {
 		creator := usecasesfakes.FakeInvestmentCreator{}
-		randomId := uuid.New()
+		randomId := domain.NewId()
 		creator.CreateReturns(&randomId, nil)
 		useCase := investment.NewCreateInvestmentUseCase(&creator, logger)
 
@@ -36,7 +35,7 @@ func TestCreateInvestmentUseCase(t *testing.T) {
 		require.Equal(t, ctx, ctxArg)
 		require.Equal(t, accountId, calledAccountId)
 		require.Equal(t, accountId, modelInvestment.AccountId)
-		require.NotEqual(t, uuid.Nil, modelInvestment.Id)
+		require.Equal(t, domain.Id(0), modelInvestment.Id) // id assigned by the repository
 		require.Equal(t, dto.Name, modelInvestment.Name)
 		require.Equal(t, dto.Type, modelInvestment.Type)
 		require.Equal(t, dto.Currency, modelInvestment.Currency)

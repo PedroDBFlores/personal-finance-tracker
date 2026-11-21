@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
 )
@@ -15,11 +14,11 @@ import (
 // Usecase interfaces the handlers depend on (satisfied by the usecase structs).
 
 type investmentCreator interface {
-	Execute(ctx context.Context, accountId domain.Id, dto dtos.CreateInvestmentDto) (*uuid.UUID, error)
+	Execute(ctx context.Context, accountId domain.Id, dto dtos.CreateInvestmentDto) (*domain.Id, error)
 }
 
 type investmentGetter interface {
-	Execute(ctx context.Context, accountId domain.Id, id uuid.UUID) (*dtos.InvestmentDto, error)
+	Execute(ctx context.Context, accountId domain.Id, id domain.Id) (*dtos.InvestmentDto, error)
 }
 
 type investmentLister interface {
@@ -27,11 +26,11 @@ type investmentLister interface {
 }
 
 type investmentUpdater interface {
-	Execute(ctx context.Context, accountId domain.Id, id uuid.UUID, update domain.InvestmentPatch) error
+	Execute(ctx context.Context, accountId domain.Id, id domain.Id, update domain.InvestmentPatch) error
 }
 
 type investmentDeleter interface {
-	Execute(ctx context.Context, accountId domain.Id, id uuid.UUID) error
+	Execute(ctx context.Context, accountId domain.Id, id domain.Id) error
 }
 
 // --- JSON wire types ---
@@ -138,7 +137,7 @@ func (h *InvestmentHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := parseUUIDParam(w, r, "investmentId")
+	id, ok := parseIdParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
@@ -172,7 +171,7 @@ func (h *InvestmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := parseUUIDParam(w, r, "investmentId")
+	id, ok := parseIdParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
@@ -207,7 +206,7 @@ func (h *InvestmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	id, ok := parseUUIDParam(w, r, "investmentId")
+	id, ok := parseIdParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
@@ -219,16 +218,6 @@ func (h *InvestmentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 // --- shared helpers ---
-
-func parseUUIDParam(w http.ResponseWriter, r *http.Request, name string) (uuid.UUID, bool) {
-	raw := r.PathValue(name)
-	id, err := uuid.Parse(raw)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid "+name+" parameter")
-		return uuid.Nil, false
-	}
-	return id, true
-}
 
 // parseMoneyParam parses a decimal string into Money; an empty string means zero.
 func parseMoneyParam(s string) (domain.Money, error) {

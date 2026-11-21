@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/rest"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -29,14 +28,14 @@ func newInvestmentRouter(creator *usecasesfakes.FakeInvestmentCreator, getter *u
 	return mux
 }
 
-func sampleInvestment(accountId domain.Id, id uuid.UUID) domain.Investment {
+func sampleInvestment(accountId domain.Id, id domain.Id) domain.Investment {
 	return domain.NewInvestment(id, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC), nil)
 }
 
 func TestInvestmentHandlerCreate(t *testing.T) {
 	t.Run("creates an investment under an account", func(t *testing.T) {
 		creator := &usecasesfakes.FakeInvestmentCreator{}
-		id := uuid.New()
+		id := domain.NewId()
 		creator.CreateReturns(&id, nil)
 		r := newInvestmentRouter(creator, nil, nil, nil, nil, nil)
 
@@ -85,10 +84,10 @@ func TestInvestmentHandlerGet(t *testing.T) {
 	t.Run("returns the investment with the current value calculated from its transactions", func(t *testing.T) {
 		getter := &usecasesfakes.FakeInvestmentGetter{}
 		txLister := &usecasesfakes.FakeInvestmentTransactionLister{}
-		investmentId := uuid.New()
+		investmentId := domain.NewId()
 		inv := sampleInvestment(2, investmentId)
 		getter.GetReturns(&inv, nil)
-		buy := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
+		buy := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
 		txLister.ListReturns([]domain.InvestmentTransaction{buy}, nil)
 		r := newInvestmentRouter(nil, getter, nil, nil, nil, txLister)
 
@@ -107,7 +106,7 @@ func TestInvestmentHandlerGet(t *testing.T) {
 	t.Run("returns 404 when not found", func(t *testing.T) {
 		getter := &usecasesfakes.FakeInvestmentGetter{}
 		txLister := &usecasesfakes.FakeInvestmentTransactionLister{}
-		investmentId := uuid.New()
+		investmentId := domain.NewId()
 		getter.GetReturns(nil, app_errors.NewResourceNotFoundError("Investment", investmentId.String()))
 		r := newInvestmentRouter(nil, getter, nil, nil, nil, txLister)
 
@@ -117,7 +116,7 @@ func TestInvestmentHandlerGet(t *testing.T) {
 
 	t.Run("returns 400 on invalid investment id", func(t *testing.T) {
 		r := newInvestmentRouter(nil, nil, nil, nil, nil, nil)
-		rec := doRequest(t, r, http.MethodGet, "/accounts/2/investments/not-a-uuid", nil)
+		rec := doRequest(t, r, http.MethodGet, "/accounts/2/investments/abc", nil)
 		require.Equal(t, http.StatusBadRequest, rec.Code)
 	})
 }
@@ -126,7 +125,7 @@ func TestInvestmentHandlerList(t *testing.T) {
 	t.Run("lists investments of an account", func(t *testing.T) {
 		lister := &usecasesfakes.FakeInvestmentLister{}
 		txLister := &usecasesfakes.FakeInvestmentTransactionLister{}
-		lister.ListReturns([]domain.Investment{sampleInvestment(2, uuid.New())}, nil)
+		lister.ListReturns([]domain.Investment{sampleInvestment(2, domain.NewId())}, nil)
 		txLister.ListReturns([]domain.InvestmentTransaction{}, nil)
 		r := newInvestmentRouter(nil, nil, lister, nil, nil, txLister)
 
@@ -146,7 +145,7 @@ func TestInvestmentHandlerUpdate(t *testing.T) {
 		updater := &usecasesfakes.FakeInvestmentUpdater{}
 		updater.UpdateReturns(nil)
 		r := newInvestmentRouter(nil, nil, nil, updater, nil, nil)
-		investmentId := uuid.New()
+		investmentId := domain.NewId()
 
 		rec := doRequest(t, r, http.MethodPatch, "/accounts/2/investments/"+investmentId.String(), map[string]string{"name": "Renamed ETF"})
 
@@ -163,7 +162,7 @@ func TestInvestmentHandlerUpdate(t *testing.T) {
 		updater := &usecasesfakes.FakeInvestmentUpdater{}
 		r := newInvestmentRouter(nil, nil, nil, updater, nil, nil)
 
-		rec := doRequest(t, r, http.MethodPatch, "/accounts/2/investments/"+uuid.New().String(), map[string]string{"type": "Crypto"})
+		rec := doRequest(t, r, http.MethodPatch, "/accounts/2/investments/"+domain.NewId().String(), map[string]string{"type": "Crypto"})
 		require.Equal(t, http.StatusBadRequest, rec.Code)
 		require.Equal(t, 0, updater.UpdateCallCount())
 	})
@@ -174,7 +173,7 @@ func TestInvestmentHandlerDelete(t *testing.T) {
 		deleter := &usecasesfakes.FakeInvestmentDeleter{}
 		deleter.DeleteReturns(nil)
 		r := newInvestmentRouter(nil, nil, nil, nil, deleter, nil)
-		investmentId := uuid.New()
+		investmentId := domain.NewId()
 
 		rec := doRequest(t, r, http.MethodDelete, "/accounts/2/investments/"+investmentId.String(), nil)
 
@@ -186,7 +185,7 @@ func TestInvestmentHandlerDelete(t *testing.T) {
 
 	t.Run("returns 404 when the investment doesn't exist", func(t *testing.T) {
 		deleter := &usecasesfakes.FakeInvestmentDeleter{}
-		investmentId := uuid.New()
+		investmentId := domain.NewId()
 		deleter.DeleteReturns(app_errors.NewResourceNotFoundError("Investment", investmentId.String()))
 		r := newInvestmentRouter(nil, nil, nil, nil, deleter, nil)
 

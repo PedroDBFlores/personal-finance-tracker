@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases/investment"
@@ -19,7 +18,7 @@ func TestGetInvestmentUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
 	accountId := domain.NewId()
-	investmentId := uuid.New()
+	investmentId := domain.NewId()
 
 	sampleInvestment := func() domain.Investment {
 		inv := domain.NewInvestment(investmentId, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil)
@@ -31,7 +30,7 @@ func TestGetInvestmentUseCase(t *testing.T) {
 		txLister := usecasesfakes.FakeInvestmentTransactionLister{}
 		inv := sampleInvestment()
 		getter.GetReturns(&inv, nil)
-		buy := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
+		buy := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
 		txLister.ListReturns([]domain.InvestmentTransaction{buy}, nil)
 		useCase := investment.NewGetInvestmentUseCase(&getter, &txLister, logger)
 

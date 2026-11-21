@@ -4,13 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewInvestment(t *testing.T) {
-	id := uuid.New()
+	id := domain.NewId()
 	accountId := domain.NewId()
 	purchaseDate := time.Now()
 	maturityDate := purchaseDate.AddDate(1, 0, 0)
@@ -36,7 +35,7 @@ func TestNewInvestment(t *testing.T) {
 }
 
 func TestUpdateCurrentValue(t *testing.T) {
-	investmentId := uuid.New()
+	investmentId := domain.NewId()
 	accountId := domain.NewId()
 	now := time.Now()
 
@@ -44,9 +43,9 @@ func TestUpdateCurrentValue(t *testing.T) {
 		inv := domain.NewInvestment(investmentId, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, now, nil)
 
 		// Buy 10 shares at $100.00 each -> 10*100*100 = 100000 cents
-		buy := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), now, "Initial Buy")
+		buy := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), now, "Initial Buy")
 		// Sell 2 shares at $120.00 each -> 2*120*100 = 24000 cents
-		sell := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), now, "Partial Sell")
+		sell := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), now, "Partial Sell")
 
 		inv.UpdateCurrentValue([]domain.InvestmentTransaction{buy, sell})
 		require.Equal(t, domain.Money(76000), inv.CurrentValue)
@@ -55,8 +54,8 @@ func TestUpdateCurrentValue(t *testing.T) {
 	t.Run("for savings: deposit minus withdraw", func(t *testing.T) {
 		inv := domain.NewInvestment(investmentId, accountId, "Savings", domain.Savings, domain.CurrencyUSD, now, nil)
 
-		deposit := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Deposit, domain.Money(50000), 0, 0, now, "Deposit")
-		withdraw := domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Withdraw, domain.Money(20000), 0, 0, now, "Withdraw")
+		deposit := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Deposit, domain.Money(50000), 0, 0, now, "Deposit")
+		withdraw := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Withdraw, domain.Money(20000), 0, 0, now, "Withdraw")
 
 		inv.UpdateCurrentValue([]domain.InvestmentTransaction{deposit, withdraw})
 		require.Equal(t, domain.Money(30000), inv.CurrentValue)
@@ -65,7 +64,7 @@ func TestUpdateCurrentValue(t *testing.T) {
 	t.Run("ignores transactions of other investments", func(t *testing.T) {
 		inv := domain.NewInvestment(investmentId, accountId, "ETF", domain.ETF, domain.CurrencyUSD, now, nil)
 
-		other := domain.NewInvestmentTransaction(uuid.New(), uuid.New(), domain.Deposit, domain.Money(100000), 0, 0, now, "Other")
+		other := domain.NewInvestmentTransaction(domain.NewId(), domain.NewId(), domain.Deposit, domain.Money(100000), 0, 0, now, "Other")
 
 		inv.UpdateCurrentValue([]domain.InvestmentTransaction{other})
 		require.Equal(t, domain.Money(0), inv.CurrentValue)

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases/investment"
@@ -23,10 +22,10 @@ func TestListInvestmentsUseCase(t *testing.T) {
 	t.Run("lists investments with current values calculated from transactions", func(t *testing.T) {
 		lister := usecasesfakes.FakeInvestmentLister{}
 		txLister := usecasesfakes.FakeInvestmentTransactionLister{}
-		invId := uuid.New()
+		invId := domain.NewId()
 		inv := domain.NewInvestment(invId, accountId, "Savings", domain.Savings, domain.CurrencyUSD, time.Now(), nil)
 		lister.ListReturns([]domain.Investment{inv}, nil)
-		deposit := domain.NewInvestmentTransaction(uuid.New(), invId, domain.Deposit, domain.Money(50000), 0, 0, time.Now(), "Deposit")
+		deposit := domain.NewInvestmentTransaction(domain.NewId(), invId, domain.Deposit, domain.Money(50000), 0, 0, time.Now(), "Deposit")
 		txLister.ListReturns([]domain.InvestmentTransaction{deposit}, nil)
 		useCase := investment.NewListInvestmentsUseCase(&lister, &txLister, logger)
 

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
@@ -20,12 +19,12 @@ func TestCreateInvestmentTransactionUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
 	accountId := domain.Id(7)
-	investmentId := uuid.New()
+	investmentId := domain.NewId()
 	dto := dtos.NewCreateInvestmentTransactionDto(domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Initial Buy")
 
 	t.Run("creates a transaction successfully", func(t *testing.T) {
 		creator := usecasesfakes.FakeInvestmentTransactionCreator{}
-		randomId := uuid.New()
+		randomId := domain.NewId()
 		creator.CreateReturns(&randomId, nil)
 		useCase := investmenttransaction.NewCreateInvestmentTransactionUseCase(&creator, logger)
 
@@ -38,7 +37,7 @@ func TestCreateInvestmentTransactionUseCase(t *testing.T) {
 		require.Equal(t, accountId, calledAccountId)
 		require.Equal(t, investmentId, calledInvestmentId)
 		require.Equal(t, investmentId, modelTx.InvestmentId)
-		require.NotEqual(t, uuid.Nil, modelTx.Id)
+		require.Equal(t, domain.Id(0), modelTx.Id) // id assigned by the repository
 		require.Equal(t, dto.Type, modelTx.Type)
 		require.Equal(t, dto.Amount, modelTx.Amount)
 		require.Equal(t, dto.Quantity, modelTx.Quantity)

@@ -80,10 +80,9 @@ api/app_errors/         shared error types (e.g. ResourceNotFoundError)
   with a doc comment on every field and a `NewX(...)` constructor.
 - Value objects and enums live here too (`Money`, `Id`, `Currency`, `AccountType`,
   `MovementType`, ...). Enums are string types with a const block and a `ParseX(s string)` func.
-- IDs: use `domain.Id` (uint, SQLite autoincrement) for all new entities.
-  `Investment`/`InvestmentTransaction` still use `uuid.UUID` for their own ids from earlier
-  iterations — do not extend that pattern to new code. But `Investment.AccountId` is a
-  `domain.Id` FK to `Account` (adjusted when investments were wired up).
+- IDs: use `domain.Id` (uint, SQLite autoincrement) for all entities, including
+  `Investment`/`InvestmentTransaction` (migrated off `uuid.UUID`). `Investment.AccountId`
+  and `InvestmentTransaction.InvestmentId` are `domain.Id` FKs.
 - `Money` is `int64` minor units: the last two digits are always the cents.
   `domain.ParseMoney("12.34")` parses a decimal string into minor units (used by the API).
 - Investments: `Investment.CurrentValue` is derived, not stored user input — the
@@ -113,10 +112,7 @@ api/app_errors/         shared error types (e.g. ResourceNotFoundError)
 
 ### api/adapters/database/
 
-- GORM models in `models.go` (embed `gorm.Model`), SQLite via `gorm.io/driver/sqlite`.
-  Exception: `Investment`/`InvestmentTransaction` use a `uuid.UUID` primary key
-  (`gorm:"type:char(36);primaryKey"`) so they declare `CreatedAt`/`UpdatedAt`/`DeletedAt`
-  explicitly instead of embedding `gorm.Model`.
+- GORM models in `models.go` (all embed `gorm.Model`), SQLite via `gorm.io/driver/sqlite`.
 - One repository per entity (`AccountRepository`, `MovementRepository`), constructed
   with `NewXxxRepository(db *gorm.DB)`, methods matching the ports exactly.
 - Convert between layers with unexported helpers `dbXToDomainX` / `domainXToDBX`
@@ -135,7 +131,7 @@ api/app_errors/         shared error types (e.g. ResourceNotFoundError)
 - Routes: `POST/GET /accounts`, `GET/PATCH/DELETE /accounts/{id}`, nested
   `POST/GET /accounts/{accountId}/movements`, `GET/PATCH/DELETE .../movements/{movementId}`,
   nested `POST/GET /accounts/{accountId}/investments`,
-  `GET/PATCH/DELETE .../investments/{investmentId}` (uuid param, parsed with `uuid.Parse`),
+  `GET/PATCH/DELETE .../investments/{investmentId}` (numeric id param),
   and nested `.../investments/{investmentId}/transactions[/{transactionId}]`.
 - Handlers depend on narrow interfaces matching the usecase `Execute` signatures
   (satisfied by the usecase structs). Request/response are JSON wire types defined in
@@ -190,10 +186,8 @@ go run ./cmd        # serve the API on :8080 (SQLite file: tracker.db)
 
 ## Housekeeping
 
-- Schema changes happen in `api/adapters/database/models.go` (AutoMigrate). `SCHEMA.md` still
-  describes the old Badger KV layout — update it when the schema changes.
-- `github.com/dgraph-io/badger` in `api/go.mod` and `api/adapters/database/connector.go` are legacy
-  (pre-SQLite); the composition root in `api/cmd` opens SQLite directly via
-  `gorm.Open(sqlite.Open("tracker.db"), ...)` + `AutoMigrate`. Do not use Badger in new code.
+- Schema changes happen in `api/adapters/database/models.go` (AutoMigrate).
+- The composition root in `api/cmd` opens SQLite directly via
+  `gorm.Open(sqlite.Open("tracker.db"), ...)` + `AutoMigrate`.
 - `*.db` files are gitignored.
 - Git: work on `main`, short imperative commit messages.

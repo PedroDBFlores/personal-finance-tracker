@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/dtos"
 )
@@ -15,23 +14,23 @@ import (
 // Usecase interfaces the handlers depend on (satisfied by the usecase structs).
 
 type investmentTransactionCreator interface {
-	Execute(ctx context.Context, accountId domain.Id, investmentId uuid.UUID, dto dtos.CreateInvestmentTransactionDto) (*uuid.UUID, error)
+	Execute(ctx context.Context, accountId domain.Id, investmentId domain.Id, dto dtos.CreateInvestmentTransactionDto) (*domain.Id, error)
 }
 
 type investmentTransactionGetter interface {
-	Execute(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) (*dtos.InvestmentTransactionDto, error)
+	Execute(ctx context.Context, accountId domain.Id, investmentId, id domain.Id) (*dtos.InvestmentTransactionDto, error)
 }
 
 type investmentTransactionLister interface {
-	Execute(ctx context.Context, accountId domain.Id, investmentId uuid.UUID) ([]dtos.InvestmentTransactionDto, error)
+	Execute(ctx context.Context, accountId domain.Id, investmentId domain.Id) ([]dtos.InvestmentTransactionDto, error)
 }
 
 type investmentTransactionUpdater interface {
-	Execute(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID, update domain.InvestmentTransactionPatch) error
+	Execute(ctx context.Context, accountId domain.Id, investmentId, id domain.Id, update domain.InvestmentTransactionPatch) error
 }
 
 type investmentTransactionDeleter interface {
-	Execute(ctx context.Context, accountId domain.Id, investmentId, id uuid.UUID) error
+	Execute(ctx context.Context, accountId domain.Id, investmentId, id domain.Id) error
 }
 
 // --- JSON wire types ---
@@ -106,7 +105,7 @@ func (h *InvestmentTransactionHandler) Create(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	investmentId, ok := parseUUIDParam(w, r, "investmentId")
+	investmentId, ok := parseIdParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
@@ -150,11 +149,11 @@ func (h *InvestmentTransactionHandler) Get(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	investmentId, ok := parseUUIDParam(w, r, "investmentId")
+	investmentId, ok := parseIdParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
-	id, ok := parseUUIDParam(w, r, "transactionId")
+	id, ok := parseIdParam(w, r, "transactionId")
 	if !ok {
 		return
 	}
@@ -171,7 +170,7 @@ func (h *InvestmentTransactionHandler) List(w http.ResponseWriter, r *http.Reque
 	if !ok {
 		return
 	}
-	investmentId, ok := parseUUIDParam(w, r, "investmentId")
+	investmentId, ok := parseIdParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
@@ -192,11 +191,11 @@ func (h *InvestmentTransactionHandler) Update(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	investmentId, ok := parseUUIDParam(w, r, "investmentId")
+	investmentId, ok := parseIdParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
-	id, ok := parseUUIDParam(w, r, "transactionId")
+	id, ok := parseIdParam(w, r, "transactionId")
 	if !ok {
 		return
 	}
@@ -250,11 +249,11 @@ func (h *InvestmentTransactionHandler) Delete(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	investmentId, ok := parseUUIDParam(w, r, "investmentId")
+	investmentId, ok := parseIdParam(w, r, "investmentId")
 	if !ok {
 		return
 	}
-	id, ok := parseUUIDParam(w, r, "transactionId")
+	id, ok := parseIdParam(w, r, "transactionId")
 	if !ok {
 		return
 	}

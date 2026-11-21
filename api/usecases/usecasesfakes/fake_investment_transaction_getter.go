@@ -5,13 +5,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
 
 type FakeInvestmentTransactionGetter struct {
-	GetStub        func(context.Context, domain.Id, uuid.UUID, uuid.UUID) (*domain.InvestmentTransaction, error)
+	GetStub        func(context.Context, domain.Id, domain.Id, domain.Id) (*domain.InvestmentTransaction, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []FakeInvestmentTransactionGetterGetArgs
 	getReturns     struct {
@@ -31,11 +30,11 @@ type FakeInvestmentTransactionGetter struct {
 type FakeInvestmentTransactionGetterGetArgs struct {
 	Arg1 context.Context
 	Arg2 domain.Id
-	Arg3 uuid.UUID
-	Arg4 uuid.UUID
+	Arg3 domain.Id
+	Arg4 domain.Id
 }
 
-func (fake *FakeInvestmentTransactionGetter) Get(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID, arg4 uuid.UUID) (*domain.InvestmentTransaction, error) {
+func (fake *FakeInvestmentTransactionGetter) Get(arg1 context.Context, arg2 domain.Id, arg3 domain.Id, arg4 domain.Id) (*domain.InvestmentTransaction, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, FakeInvestmentTransactionGetterGetArgs{arg1, arg2, arg3, arg4})
@@ -58,13 +57,13 @@ func (fake *FakeInvestmentTransactionGetter) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeInvestmentTransactionGetter) GetCalls(stub func(context.Context, domain.Id, uuid.UUID, uuid.UUID) (*domain.InvestmentTransaction, error)) {
+func (fake *FakeInvestmentTransactionGetter) GetCalls(stub func(context.Context, domain.Id, domain.Id, domain.Id) (*domain.InvestmentTransaction, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeInvestmentTransactionGetter) GetArgsForCall(i int) (context.Context, domain.Id, uuid.UUID, uuid.UUID) {
+func (fake *FakeInvestmentTransactionGetter) GetArgsForCall(i int) (context.Context, domain.Id, domain.Id, domain.Id) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]

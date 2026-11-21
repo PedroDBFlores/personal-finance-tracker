@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/database"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -25,7 +24,7 @@ func TestInvestmentRepository(t *testing.T) {
 	}
 
 	newInvestment := func(accountId domain.Id) domain.Investment {
-		return domain.NewInvestment(uuid.New(), accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil)
+		return domain.NewInvestment(0, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil)
 	}
 
 	t.Run("it creates an investment in the database", func(t *testing.T) {
@@ -38,7 +37,7 @@ func TestInvestmentRepository(t *testing.T) {
 
 		id, err := repo.Create(ctx, *accountId, newInvestment(*accountId))
 		require.NoError(t, err)
-		require.NotEqual(t, uuid.Nil, *id)
+		require.NotEqual(t, domain.Id(0), *id)
 
 		inv, err := repo.Get(ctx, *accountId, *id)
 		require.NoError(t, err)
@@ -56,7 +55,7 @@ func TestInvestmentRepository(t *testing.T) {
 		require.NoError(t, err)
 		repo := database.NewInvestmentRepository(db)
 
-		id := uuid.New()
+		id := domain.NewId()
 		inv, err := repo.Get(ctx, domain.NewId(), id)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Investment", id.String()))
 		require.Nil(t, inv)
@@ -104,7 +103,7 @@ func TestInvestmentRepository(t *testing.T) {
 		require.NoError(t, err)
 		repo := database.NewInvestmentRepository(db)
 
-		id := uuid.New()
+		id := domain.NewId()
 		newName := "Nope"
 		err = repo.Update(ctx, domain.NewId(), id, domain.InvestmentPatch{Name: &newName})
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Investment", id.String()))
@@ -119,7 +118,7 @@ func TestInvestmentRepository(t *testing.T) {
 		repo := database.NewInvestmentRepository(db)
 		firstId, err := repo.Create(ctx, *accountId, newInvestment(*accountId))
 		require.NoError(t, err)
-		secondId, err := repo.Create(ctx, *accountId, domain.NewInvestment(uuid.New(), *accountId, "Savings", domain.Savings, domain.CurrencyUSD, time.Now(), nil))
+		secondId, err := repo.Create(ctx, *accountId, domain.NewInvestment(0, *accountId, "Savings", domain.Savings, domain.CurrencyUSD, time.Now(), nil))
 		require.NoError(t, err)
 
 		investments, err := repo.List(ctx, *accountId)
@@ -156,7 +155,7 @@ func TestInvestmentRepository(t *testing.T) {
 		require.NoError(t, err)
 		repo := database.NewInvestmentRepository(db)
 
-		id := uuid.New()
+		id := domain.NewId()
 		err = repo.Delete(ctx, domain.NewId(), id)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("Investment", id.String()))
 	})

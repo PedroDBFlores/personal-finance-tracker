@@ -5,13 +5,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
 
 type FakeInvestmentTransactionDeleter struct {
-	DeleteStub        func(context.Context, domain.Id, uuid.UUID, uuid.UUID) error
+	DeleteStub        func(context.Context, domain.Id, domain.Id, domain.Id) error
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []FakeInvestmentTransactionDeleterDeleteArgs
 	deleteReturns     struct {
@@ -29,11 +28,11 @@ type FakeInvestmentTransactionDeleter struct {
 type FakeInvestmentTransactionDeleterDeleteArgs struct {
 	Arg1 context.Context
 	Arg2 domain.Id
-	Arg3 uuid.UUID
-	Arg4 uuid.UUID
+	Arg3 domain.Id
+	Arg4 domain.Id
 }
 
-func (fake *FakeInvestmentTransactionDeleter) Delete(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID, arg4 uuid.UUID) error {
+func (fake *FakeInvestmentTransactionDeleter) Delete(arg1 context.Context, arg2 domain.Id, arg3 domain.Id, arg4 domain.Id) error {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, FakeInvestmentTransactionDeleterDeleteArgs{arg1, arg2, arg3, arg4})
@@ -56,13 +55,13 @@ func (fake *FakeInvestmentTransactionDeleter) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *FakeInvestmentTransactionDeleter) DeleteCalls(stub func(context.Context, domain.Id, uuid.UUID, uuid.UUID) error) {
+func (fake *FakeInvestmentTransactionDeleter) DeleteCalls(stub func(context.Context, domain.Id, domain.Id, domain.Id) error) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
 }
 
-func (fake *FakeInvestmentTransactionDeleter) DeleteArgsForCall(i int) (context.Context, domain.Id, uuid.UUID, uuid.UUID) {
+func (fake *FakeInvestmentTransactionDeleter) DeleteArgsForCall(i int) (context.Context, domain.Id, domain.Id, domain.Id) {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	argsForCall := fake.deleteArgsForCall[i]

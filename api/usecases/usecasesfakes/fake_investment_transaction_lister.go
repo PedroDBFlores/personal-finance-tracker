@@ -5,13 +5,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
 
 type FakeInvestmentTransactionLister struct {
-	ListStub        func(context.Context, domain.Id, uuid.UUID) ([]domain.InvestmentTransaction, error)
+	ListStub        func(context.Context, domain.Id, domain.Id) ([]domain.InvestmentTransaction, error)
 	listMutex       sync.RWMutex
 	listArgsForCall []FakeInvestmentTransactionListerListArgs
 	listReturns     struct {
@@ -31,10 +30,10 @@ type FakeInvestmentTransactionLister struct {
 type FakeInvestmentTransactionListerListArgs struct {
 	Arg1 context.Context
 	Arg2 domain.Id
-	Arg3 uuid.UUID
+	Arg3 domain.Id
 }
 
-func (fake *FakeInvestmentTransactionLister) List(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID) ([]domain.InvestmentTransaction, error) {
+func (fake *FakeInvestmentTransactionLister) List(arg1 context.Context, arg2 domain.Id, arg3 domain.Id) ([]domain.InvestmentTransaction, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
 	fake.listArgsForCall = append(fake.listArgsForCall, FakeInvestmentTransactionListerListArgs{arg1, arg2, arg3})
@@ -57,13 +56,13 @@ func (fake *FakeInvestmentTransactionLister) ListCallCount() int {
 	return len(fake.listArgsForCall)
 }
 
-func (fake *FakeInvestmentTransactionLister) ListCalls(stub func(context.Context, domain.Id, uuid.UUID) ([]domain.InvestmentTransaction, error)) {
+func (fake *FakeInvestmentTransactionLister) ListCalls(stub func(context.Context, domain.Id, domain.Id) ([]domain.InvestmentTransaction, error)) {
 	fake.listMutex.Lock()
 	defer fake.listMutex.Unlock()
 	fake.ListStub = stub
 }
 
-func (fake *FakeInvestmentTransactionLister) ListArgsForCall(i int) (context.Context, domain.Id, uuid.UUID) {
+func (fake *FakeInvestmentTransactionLister) ListArgsForCall(i int) (context.Context, domain.Id, domain.Id) {
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
 	argsForCall := fake.listArgsForCall[i]

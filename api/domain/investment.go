@@ -2,14 +2,12 @@ package domain
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 // Investment represents a financial investment (e.g., ETF, Savings, TermDeposit)
 type Investment struct {
 	// Id represents the unique investment identifier.
-	Id uuid.UUID
+	Id Id
 	// AccountId links the investment to an account.
 	AccountId Id
 	// Name defines the investment name (e.g., "Vanguard S&P 500 ETF", "Ally Bank CD")
@@ -30,7 +28,7 @@ type Investment struct {
 // NewInvestment creates a new Investment based on the provided parameters.
 // CurrentValue is calculated from transactions, so it starts at zero.
 func NewInvestment(
-	id uuid.UUID,
+	id Id,
 	accountId Id,
 	name string,
 	investmentType InvestmentType,

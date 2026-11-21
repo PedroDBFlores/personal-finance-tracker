@@ -5,13 +5,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases"
 )
 
 type FakeInvestmentGetter struct {
-	GetStub        func(context.Context, domain.Id, uuid.UUID) (*domain.Investment, error)
+	GetStub        func(context.Context, domain.Id, domain.Id) (*domain.Investment, error)
 	getMutex       sync.RWMutex
 	getArgsForCall []FakeInvestmentGetterGetArgs
 	getReturns     struct {
@@ -31,10 +30,10 @@ type FakeInvestmentGetter struct {
 type FakeInvestmentGetterGetArgs struct {
 	Arg1 context.Context
 	Arg2 domain.Id
-	Arg3 uuid.UUID
+	Arg3 domain.Id
 }
 
-func (fake *FakeInvestmentGetter) Get(arg1 context.Context, arg2 domain.Id, arg3 uuid.UUID) (*domain.Investment, error) {
+func (fake *FakeInvestmentGetter) Get(arg1 context.Context, arg2 domain.Id, arg3 domain.Id) (*domain.Investment, error) {
 	fake.getMutex.Lock()
 	ret, specificReturn := fake.getReturnsOnCall[len(fake.getArgsForCall)]
 	fake.getArgsForCall = append(fake.getArgsForCall, FakeInvestmentGetterGetArgs{arg1, arg2, arg3})
@@ -57,13 +56,13 @@ func (fake *FakeInvestmentGetter) GetCallCount() int {
 	return len(fake.getArgsForCall)
 }
 
-func (fake *FakeInvestmentGetter) GetCalls(stub func(context.Context, domain.Id, uuid.UUID) (*domain.Investment, error)) {
+func (fake *FakeInvestmentGetter) GetCalls(stub func(context.Context, domain.Id, domain.Id) (*domain.Investment, error)) {
 	fake.getMutex.Lock()
 	defer fake.getMutex.Unlock()
 	fake.GetStub = stub
 }
 
-func (fake *FakeInvestmentGetter) GetArgsForCall(i int) (context.Context, domain.Id, uuid.UUID) {
+func (fake *FakeInvestmentGetter) GetArgsForCall(i int) (context.Context, domain.Id, domain.Id) {
 	fake.getMutex.RLock()
 	defer fake.getMutex.RUnlock()
 	argsForCall := fake.getArgsForCall[i]

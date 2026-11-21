@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/adapters/database"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
@@ -24,7 +23,7 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	setup := func(t *testing.T) (domain.Id, uuid.UUID, database.InvestmentRepository, database.InvestmentTransactionRepository) {
+	setup := func(t *testing.T) (domain.Id, domain.Id, database.InvestmentRepository, database.InvestmentTransactionRepository) {
 		t.Helper()
 		db, err := getInMemoryDatabase(t, logger)
 		require.NoError(t, err)
@@ -32,13 +31,13 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 		accountId, err := accRepo.Create(ctx, baseAccount)
 		require.NoError(t, err)
 		invRepo := database.NewInvestmentRepository(db)
-		investmentId, err := invRepo.Create(ctx, *accountId, domain.NewInvestment(uuid.New(), *accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil))
+		investmentId, err := invRepo.Create(ctx, *accountId, domain.NewInvestment(0, *accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil))
 		require.NoError(t, err)
 		return *accountId, *investmentId, invRepo, database.NewInvestmentTransactionRepository(db)
 	}
 
-	newTx := func(investmentId uuid.UUID) domain.InvestmentTransaction {
-		return domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Initial Buy")
+	newTx := func(investmentId domain.Id) domain.InvestmentTransaction {
+		return domain.NewInvestmentTransaction(0, investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Initial Buy")
 	}
 
 	t.Run("it creates a transaction in the database", func(t *testing.T) {
@@ -46,7 +45,7 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 
 		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
-		require.NotEqual(t, uuid.Nil, *id)
+		require.NotEqual(t, domain.Id(0), *id)
 
 		tx, err := repo.Get(ctx, accountId, investmentId, *id)
 		require.NoError(t, err)
@@ -70,7 +69,7 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 	t.Run("get returns ResourceNotFoundError if the transaction doesn't exist", func(t *testing.T) {
 		accountId, investmentId, _, repo := setup(t)
 
-		id := uuid.New()
+		id := domain.NewId()
 		tx, err := repo.Get(ctx, accountId, investmentId, id)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
 		require.Nil(t, tx)
@@ -81,7 +80,7 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 		id, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
 
-		tx, err := repo.Get(ctx, accountId, uuid.New(), *id)
+		tx, err := repo.Get(ctx, accountId, domain.NewId(), *id)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
 		require.Nil(t, tx)
 	})
@@ -117,7 +116,7 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 	t.Run("update returns ResourceNotFoundError if the transaction doesn't exist", func(t *testing.T) {
 		accountId, investmentId, _, repo := setup(t)
 
-		id := uuid.New()
+		id := domain.NewId()
 		newPrice := domain.Money(12000)
 		err := repo.Update(ctx, accountId, investmentId, id, domain.InvestmentTransactionPatch{Price: &newPrice})
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
@@ -137,7 +136,7 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 		accountId, investmentId, _, repo := setup(t)
 		firstId, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
-		secondId, err := repo.Create(ctx, accountId, investmentId, domain.NewInvestmentTransaction(uuid.New(), investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), time.Now(), "Sell"))
+		secondId, err := repo.Create(ctx, accountId, investmentId, domain.NewInvestmentTransaction(0, investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), time.Now(), "Sell"))
 		require.NoError(t, err)
 
 		txs, err := repo.List(ctx, accountId, investmentId)
@@ -146,7 +145,7 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 		require.Equal(t, *firstId, txs[0].Id)
 		require.Equal(t, *secondId, txs[1].Id)
 
-		other, err := repo.List(ctx, accountId, uuid.New())
+		other, err := repo.List(ctx, accountId, domain.NewId())
 		require.NoError(t, err)
 		require.Empty(t, other)
 	})
@@ -177,7 +176,7 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 	t.Run("delete returns ResourceNotFoundError if the transaction doesn't exist", func(t *testing.T) {
 		accountId, investmentId, _, repo := setup(t)
 
-		id := uuid.New()
+		id := domain.NewId()
 		err := repo.Delete(ctx, accountId, investmentId, id)
 		require.ErrorIs(t, err, app_errors.NewResourceNotFoundError("InvestmentTransaction", id.String()))
 	})

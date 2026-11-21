@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/pedrodbflores/personal-finance-tracker/app_errors"
 	"github.com/pedrodbflores/personal-finance-tracker/domain"
 	"github.com/pedrodbflores/personal-finance-tracker/usecases/investmenttransaction"
@@ -18,8 +17,8 @@ func TestDeleteInvestmentTransactionUseCase(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.TODO()
 	accountId := domain.Id(7)
-	investmentId := uuid.New()
-	txId := uuid.New()
+	investmentId := domain.NewId()
+	txId := domain.NewId()
 
 	t.Run("deletes a transaction successfully", func(t *testing.T) {
 		deleter := usecasesfakes.FakeInvestmentTransactionDeleter{}
