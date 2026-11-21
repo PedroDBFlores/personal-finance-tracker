@@ -4,12 +4,12 @@ Personal finance tracker, tracked as **two projects** in this repo:
 
 ```
 api/                 Go REST API (Clean Architecture, SQLite via GORM, chi router)
-webapp/              React webapp — consumes the api over HTTP
+webapp/              SolidJS webapp — consumes the api over HTTP
 ```
 
 - `api/` is a self-contained Go module (`api/go.mod`). All Go commands run from `api/`.
-- `webapp/` is a separate Vite + React + TypeScript project with its own tooling; it must
-  only talk to the API over HTTP (default `http://localhost:8080`, override with
+- `webapp/` is a separate Vite + SolidJS 2.0 + TypeScript project with its own tooling; it
+  must only talk to the API over HTTP (default `http://localhost:8080`, override with
   `VITE_API_URL`), never import Go code.
 - **webapp uses pnpm** (pinned via `"packageManager": "pnpm@12.21.0"` in `webapp/package.json`).
   Use `pnpm install` / `pnpm add` / `pnpm test` / `pnpm build` / `pnpm dev` from `webapp/` —
@@ -20,30 +20,38 @@ webapp/              React webapp — consumes the api over HTTP
 
 ```
 webapp/src/api.ts        typed API client (fetch wrapper, ApiError with status, base URL from VITE_API_URL)
-webapp/src/App.tsx      AppRoutes (the <Routes> table) + default App (BrowserRouter + layout)
-webapp/src/pages/        one page component per route (AccountsPage, NewAccountPage, AccountDetailPage, NewMovementPage)
-webapp/src/components/RouterLink.tsx  chakra(Link) wrapper: router links with Chakra style props
-webapp/src/components/ui/provider.tsx  ChakraProvider wrapper (defaultSystem)
+webapp/src/App.tsx      routes table (createRouter route definitions) + AppRoutes + default App (layout)
+webapp/src/pages/        one page component per route (AccountsPage, NewAccountPage, AccountDetailPage, NewMovementPage, ...)
+webapp/src/components/RouterLink.tsx  <a href> wrapper: the Solid router intercepts plain anchor clicks
+webapp/src/index.css     Tailwind CSS v4 (@import "tailwindcss") + @layer component classes (btn-primary, input, card, badge, link)
 webapp/src/*.test.ts(x)  vitest tests (jsdom); api client tests mock fetch, component tests mock ./api
 ```
 
-- **Routing: react-router v8.** `App.tsx` exports `AppRoutes` (the `<Routes>` table) so tests
-  can render it inside a `MemoryRouter`; the default `App` wraps it in `BrowserRouter`.
-  Routes: `/` accounts list, `/accounts/new` create account, `/accounts/:id` account detail
-  with movements and investments, `/accounts/:id/movements/new` create movement,
+- **Routing: @solidjs/router v2.** `App.tsx` exports the `routes` table; `AppRoutes` mounts
+  `createRouter({ routes })` (browser history by default). Routes: `/` accounts list,
+  `/accounts/new` create account, `/accounts/:id` account detail with movements and
+  investments, `/accounts/:id/movements/new` create movement,
   `/accounts/:id/investments/new` create investment,
   `/accounts/:id/investments/:investmentId` investment detail with transactions,
   `/accounts/:id/investments/:investmentId/transactions/new` create transaction.
-  Navigate with `useNavigate`/`<RouterLink to=...>`; page params via `useParams`.
-- **UI kit: Chakra UI v3** (`@chakra-ui/react` + `@emotion/react`). Wrap the app in
-  `Provider` (`src/components/ui/provider.tsx`) in `main.tsx`; use Chakra components
-  (Container, Card, Button, Field, Input, NativeSelect, Badge, ...) with colorPalette /
-  variant props for styling. Component tests must render inside `<Provider>` too.
-  For router navigation use `RouterLink` (`src/components/RouterLink.tsx`, built with
-  `chakra(Link)`) — do NOT use `Button as={Link}`: Chakra's `as` prop does not merge the
-  router's props in TypeScript and leaks `to` onto the DOM element.
+  There is no `<Route>`/`A` component in router v2: routes are plain objects with `path` +
+  `component`, and links are plain anchors — use `RouterLink` (`src/components/RouterLink.tsx`,
+  maps `to` to `href`). Navigate with `useNavigate`; page params via `useParams`.
+  In tests, mount the exported `routes` with a memory history:
+  `createRouter({ routes, history: memoryHistory(path) })`.
+- **UI kit: Tailwind CSS v4** (`tailwindcss` + `@tailwindcss/vite`, wired in `vite.config.ts`).
+  Styling is utility classes in the JSX plus shared component classes (`btn-primary`, `input`,
+  `card`, `badge`, `link`, ...) declared with `@layer components` + `@apply` in
+  `src/index.css`. The Vite plugin for Solid is `@solidjs/vite-plugin` (`solid()`); mount with
+  `render(() => <App />, root)` from `@solidjs/web` in `main.tsx`. tsconfig uses
+  `"jsx": "preserve"` + `"jsxImportSource": "@solidjs/web"`.
+- **Solid 2.0 notes:** `onMount`/`splitProps` no longer exist — the component body runs once
+  on mount, so kick off data loading directly in the body; access `props.x` directly.
+  Signal writes flush on a microtask, so in tests `await Promise.resolve()` after
+  `fireEvent.input`/`fireEvent.change` before submitting a form.
 - Tests: `pnpm test` (vitest run), `pnpm test:watch`. TDD applies here too: failing test first.
-- Component tests mock the `./api` module with `vi.mock` and assert on the mocked functions;
+- Component tests use `@solidjs/testing-library` (`render`, `screen`, `fireEvent`, `waitFor`),
+  mock the `./api` module with `vi.mock` and assert on the mocked functions;
   API client tests stub `fetch` with `vi.stubGlobal`.
 - Build/lint: `pnpm build` (tsc + vite build), `pnpm lint` (oxlint). Dev server: `pnpm dev` (:5173).
 - The API sends permissive CORS headers (`Access-Control-Allow-Origin: *`) so the dev server

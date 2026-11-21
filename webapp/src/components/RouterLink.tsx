@@ -1,6 +1,17 @@
-import { chakra } from "@chakra-ui/react";
-import { Link as ReactRouterLink } from "react-router";
+import type { JSX } from "@solidjs/web";
 
-// chakra() wraps react-router's Link so it accepts Chakra style props while
-// `to` and friends are consumed by the router.
-export const RouterLink = chakra(ReactRouterLink);
+// The Solid router intercepts clicks on plain anchors, so a router link is an
+// <a href>; `to` is mapped to `href`.
+type RouterLinkProps = {
+  to: string;
+  class?: string;
+  children?: JSX.Element;
+};
+
+export function RouterLink(props: RouterLinkProps) {
+  return (
+    <a href={props.to} class={props.class}>
+      {props.children}
+    </a>
+  );
+}

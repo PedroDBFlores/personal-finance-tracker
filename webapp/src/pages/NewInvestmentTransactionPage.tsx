@@ -1,48 +1,39 @@
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
-import {
-  Button,
-  Card,
-  Field,
-  HStack,
-  Input,
-  NativeSelect,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+import { createSignal, For, Show } from "solid-js";
+import { useNavigate, useParams } from "@solidjs/router";
 import { createInvestmentTransaction } from "../api";
 import { RouterLink } from "../components/RouterLink";
 
 const TRANSACTION_TYPES = ["Buy", "Sell", "Deposit", "Withdraw"];
 
 export default function NewInvestmentTransactionPage() {
-  const { id: accountId, investmentId } = useParams<{ id: string; investmentId: string }>();
+  const params = useParams<{ id: string; investmentId: string }>();
   const navigate = useNavigate();
-  const [type, setType] = useState(TRANSACTION_TYPES[0]);
-  const [amount, setAmount] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [price, setPrice] = useState("");
-  const [description, setDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [type, setType] = createSignal(TRANSACTION_TYPES[0]);
+  const [amount, setAmount] = createSignal("");
+  const [quantity, setQuantity] = createSignal("");
+  const [price, setPrice] = createSignal("");
+  const [description, setDescription] = createSignal("");
+  const [error, setError] = createSignal<string | null>(null);
+  const [saving, setSaving] = createSignal(false);
 
   // Buy/Sell trade shares (amount = quantity * price); Deposit/Withdraw move money directly.
-  const isTrade = type === "Buy" || type === "Sell";
+  const isTrade = () => type() === "Buy" || type() === "Sell";
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault();
+    const { id: accountId, investmentId } = params;
     if (!accountId || !investmentId) return;
     setSaving(true);
     try {
-      const computedAmount = isTrade
-        ? ((Number(quantity) || 0) * (Number(price) || 0)).toFixed(2)
-        : amount;
+      const computedAmount = isTrade()
+        ? ((Number(quantity()) || 0) * (Number(price()) || 0)).toFixed(2)
+        : amount();
       await createInvestmentTransaction(accountId, investmentId, {
-        type,
+        type: type(),
         amount: computedAmount,
-        quantity: isTrade ? quantity : "",
-        price: isTrade ? price : "",
-        description,
+        quantity: isTrade() ? quantity() : "",
+        price: isTrade() ? price() : "",
+        description: description(),
       });
       navigate(`/accounts/${accountId}/investments/${investmentId}`);
     } catch (err) {
@@ -52,91 +43,109 @@ export default function NewInvestmentTransactionPage() {
   }
 
   return (
-    <Card.Root>
-      <Card.Header>
-        <Card.Title>New transaction</Card.Title>
-      </Card.Header>
-      <Card.Body>
-        <form onSubmit={submit}>
-          <VStack gap={3} align="stretch">
-            <Field.Root>
-              <Field.Label>Transaction type</Field.Label>
-              <NativeSelect.Root>
-                <NativeSelect.Field
-                  aria-label="transaction type"
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                >
-                  {TRANSACTION_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </NativeSelect.Field>
-              </NativeSelect.Root>
-            </Field.Root>
-            {isTrade ? (
-              <HStack gap={3}>
-                <Field.Root required>
-                  <Field.Label>Quantity</Field.Label>
-                  <Input
-                    aria-label="quantity"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                  />
-                </Field.Root>
-                <Field.Root required>
-                  <Field.Label>Price</Field.Label>
-                  <Input
-                    aria-label="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                  />
-                </Field.Root>
-              </HStack>
-            ) : (
-              <Field.Root required>
-                <Field.Label>Amount</Field.Label>
-                <Input
+    <div class="card">
+      <h2 class="text-xl font-semibold mb-4">New transaction</h2>
+      <form onSubmit={submit}>
+        <div class="flex flex-col gap-3">
+          <div>
+            <label class="block text-sm font-medium mb-1" for="tx-type">
+              Transaction type
+            </label>
+            <select
+              id="tx-type"
+              aria-label="transaction type"
+              class="input"
+              value={type()}
+              onChange={(e) => setType(e.currentTarget.value)}
+            >
+              <For each={TRANSACTION_TYPES}>
+                {(t) => <option value={t}>{t}</option>}
+              </For>
+            </select>
+          </div>
+          <Show
+            when={isTrade()}
+            fallback={
+              <div>
+                <label class="block text-sm font-medium mb-1" for="tx-amount">
+                  Amount
+                </label>
+                <input
+                  id="tx-amount"
                   aria-label="amount"
+                  class="input"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  required
+                  value={amount()}
+                  onInput={(e) => setAmount(e.currentTarget.value)}
                 />
-              </Field.Root>
-            )}
-            <Field.Root>
-              <Field.Label>Description</Field.Label>
-              <Input
-                aria-label="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </Field.Root>
-            {error && (
-              <Text color="fg.error" role="alert">
-                {error}
-              </Text>
-            )}
-            <HStack gap={3}>
-              <Button type="submit" colorPalette="teal" loading={saving}>
-                Add transaction
-              </Button>
-              <RouterLink to={`/accounts/${accountId}/investments/${investmentId}`} color="fg.muted">
-                Cancel
-              </RouterLink>
-            </HStack>
-          </VStack>
-        </form>
-      </Card.Body>
-    </Card.Root>
+              </div>
+            }
+          >
+            <div class="flex gap-3">
+              <div class="flex-1">
+                <label class="block text-sm font-medium mb-1" for="tx-quantity">
+                  Quantity
+                </label>
+                <input
+                  id="tx-quantity"
+                  aria-label="quantity"
+                  class="input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  value={quantity()}
+                  onInput={(e) => setQuantity(e.currentTarget.value)}
+                />
+              </div>
+              <div class="flex-1">
+                <label class="block text-sm font-medium mb-1" for="tx-price">
+                  Price
+                </label>
+                <input
+                  id="tx-price"
+                  aria-label="price"
+                  class="input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  value={price()}
+                  onInput={(e) => setPrice(e.currentTarget.value)}
+                />
+              </div>
+            </div>
+          </Show>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="tx-description">
+              Description
+            </label>
+            <input
+              id="tx-description"
+              aria-label="description"
+              class="input"
+              value={description()}
+              onInput={(e) => setDescription(e.currentTarget.value)}
+            />
+          </div>
+          <Show when={error()}>
+            <p role="alert" class="text-red-500">
+              {error()}
+            </p>
+          </Show>
+          <div class="flex gap-3">
+            <button type="submit" class="btn-primary" disabled={saving()}>
+              Add transaction
+            </button>
+            <RouterLink to={`/accounts/${params.id}/investments/${params.investmentId}`} class="link-muted self-center">
+              Cancel
+            </RouterLink>
+          </div>
+        </div>
+      </form>
+    </div>
   );
 }

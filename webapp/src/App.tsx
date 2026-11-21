@@ -1,5 +1,5 @@
-import { BrowserRouter, Route, Routes } from "react-router";
-import { Container, Heading, VStack } from "@chakra-ui/react";
+import { createRouter } from "@solidjs/router";
+import type { RouteDefinition } from "@solidjs/router";
 import { RouterLink } from "./components/RouterLink";
 import AccountsPage from "./pages/AccountsPage";
 import NewAccountPage from "./pages/NewAccountPage";
@@ -9,35 +9,32 @@ import NewInvestmentPage from "./pages/NewInvestmentPage";
 import InvestmentDetailPage from "./pages/InvestmentDetailPage";
 import NewInvestmentTransactionPage from "./pages/NewInvestmentTransactionPage";
 
-// AppRoutes is exported separately so tests can render it inside a MemoryRouter.
+// The route table is exported separately so tests can mount it with a
+// memory history via createRouter({ routes, history: memoryHistory(path) }).
+export const routes: RouteDefinition[] = [
+  { path: "/", component: AccountsPage },
+  { path: "/accounts/new", component: NewAccountPage },
+  { path: "/accounts/:id", component: AccountDetailPage },
+  { path: "/accounts/:id/movements/new", component: NewMovementPage },
+  { path: "/accounts/:id/investments/new", component: NewInvestmentPage },
+  { path: "/accounts/:id/investments/:investmentId", component: InvestmentDetailPage },
+  { path: "/accounts/:id/investments/:investmentId/transactions/new", component: NewInvestmentTransactionPage },
+];
+
 export function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/" element={<AccountsPage />} />
-      <Route path="/accounts/new" element={<NewAccountPage />} />
-      <Route path="/accounts/:id" element={<AccountDetailPage />} />
-      <Route path="/accounts/:id/movements/new" element={<NewMovementPage />} />
-      <Route path="/accounts/:id/investments/new" element={<NewInvestmentPage />} />
-      <Route path="/accounts/:id/investments/:investmentId" element={<InvestmentDetailPage />} />
-      <Route
-        path="/accounts/:id/investments/:investmentId/transactions/new"
-        element={<NewInvestmentTransactionPage />}
-      />
-    </Routes>
-  );
+  const Router = createRouter({ routes });
+  return <Router />;
 }
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Container maxW="container.md" py={8}>
-        <VStack align="stretch" gap={6}>
-          <Heading size="2xl">
-            <RouterLink to="/">Personal Finance Tracker</RouterLink>
-          </Heading>
-          <AppRoutes />
-        </VStack>
-      </Container>
-    </BrowserRouter>
+    <div class="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
+      <h1 class="text-3xl font-semibold">
+        <RouterLink to="/" class="hover:underline">
+          Personal Finance Tracker
+        </RouterLink>
+      </h1>
+      <AppRoutes />
+    </div>
   );
 }

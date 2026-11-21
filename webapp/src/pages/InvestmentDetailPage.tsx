@@ -1,17 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router";
-import { Badge, Box, Heading, HStack, List, Text, VStack, Card } from "@chakra-ui/react";
+import { createSignal, For, Show } from "solid-js";
+import { useParams } from "@solidjs/router";
 import type { Investment, InvestmentTransaction } from "../api";
 import { getInvestment, listInvestmentTransactions } from "../api";
 import { RouterLink } from "../components/RouterLink";
 
 export default function InvestmentDetailPage() {
-  const { id: accountId, investmentId } = useParams<{ id: string; investmentId: string }>();
-  const [investment, setInvestment] = useState<Investment | null>(null);
-  const [transactions, setTransactions] = useState<InvestmentTransaction[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const params = useParams<{ id: string; investmentId: string }>();
+  const [investment, setInvestment] = createSignal<Investment | null>(null);
+  const [transactions, setTransactions] = createSignal<InvestmentTransaction[]>([]);
+  const [error, setError] = createSignal<string | null>(null);
 
-  const reload = useCallback(async () => {
+  // the component body runs once on mount
+  void (async () => {
+    const { id: accountId, investmentId } = params;
     if (!accountId || !investmentId) return;
     try {
       const [inv, txs] = await Promise.all([
@@ -24,66 +25,55 @@ export default function InvestmentDetailPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [accountId, investmentId]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
+  })();
 
   return (
-    <Box>
-      <HStack justify="space-between" mb={3}>
-        <Heading size="lg">{investment ? investment.name : "Investment"}</Heading>
+    <div>
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-xl font-semibold">{investment() ? investment()!.name : "Investment"}</h2>
         <RouterLink
-          to={`/accounts/${accountId}/investments/${investmentId}/transactions/new`}
-          px="4"
-          py="2"
-          borderRadius="md"
-          bg="teal.500"
-          color="white"
-          _hover={{ bg: "teal.600" }}
+          to={`/accounts/${params.id}/investments/${params.investmentId}/transactions/new`}
+          class="btn-primary"
         >
           Add transaction
         </RouterLink>
-      </HStack>
-      {investment && (
-        <HStack gap={2} mb={4}>
-          <Badge colorPalette="gray">{investment.type}</Badge>
-          <Badge colorPalette="purple">{investment.currency}</Badge>
-          <Text fontWeight="medium">Current value: {investment.current_value}</Text>
-        </HStack>
-      )}
-      {error && (
-        <Text color="fg.error" role="alert">
-          {error}
-        </Text>
-      )}
-      <VStack align="stretch" gap={2}>
-        <Heading size="md">Transactions</Heading>
-        <List.Root gap={2}>
-          {transactions.map((tx) => (
-            <List.Item key={tx.id}>
-              <Card.Root size="sm">
-                <Card.Body>
-                  <HStack justify="space-between">
-                    <Text fontWeight="medium">{tx.description || tx.type}</Text>
-                    <HStack gap={2}>
-                      <Badge colorPalette="gray">{tx.type}</Badge>
-                      <Text>
-                        {tx.type === "Deposit" || tx.type === "Buy" ? "+" : tx.type === "Withdraw" || tx.type === "Sell" ? "-" : ""}
-                        {tx.type === "Deposit" || tx.type === "Withdraw" ? tx.amount : `${tx.quantity} @ ${tx.price}`}
-                      </Text>
-                    </HStack>
-                  </HStack>
-                </Card.Body>
-              </Card.Root>
-            </List.Item>
-          ))}
-        </List.Root>
-        <RouterLink to={`/accounts/${accountId}`} color="fg.muted" alignSelf="start">
+      </div>
+      <Show when={investment()}>
+        <div class="flex gap-2 items-center mb-4">
+          <span class="badge">{investment()!.type}</span>
+          <span class="badge badge-purple">{investment()!.currency}</span>
+          <span class="font-medium">Current value: {investment()!.current_value}</span>
+        </div>
+      </Show>
+      <Show when={error()}>
+        <p role="alert" class="text-red-500">
+          {error()}
+        </p>
+      </Show>
+      <div class="flex flex-col gap-2">
+        <h3 class="text-lg font-semibold">Transactions</h3>
+        <ul class="flex flex-col gap-2">
+          <For each={transactions()}>
+            {(tx) => (
+              <li>
+                <div class="card flex justify-between items-center">
+                  <span class="font-medium">{tx.description || tx.type}</span>
+                  <span class="flex gap-2 items-center">
+                    <span class="badge">{tx.type}</span>
+                    <span>
+                      {tx.type === "Deposit" || tx.type === "Buy" ? "+" : tx.type === "Withdraw" || tx.type === "Sell" ? "-" : ""}
+                      {tx.type === "Deposit" || tx.type === "Withdraw" ? tx.amount : `${tx.quantity} @ ${tx.price}`}
+                    </span>
+                  </span>
+                </div>
+              </li>
+            )}
+          </For>
+        </ul>
+        <RouterLink to={`/accounts/${params.id}`} class="link-muted self-start">
           Back to account
         </RouterLink>
-      </VStack>
-    </Box>
+      </div>
+    </div>
   );
 }

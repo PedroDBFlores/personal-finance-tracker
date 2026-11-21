@@ -1,32 +1,13 @@
-# React + TypeScript + Vite
+# SolidJS + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Webapp for the personal finance tracker API. Built with [SolidJS 2.0](https://docs.solidjs.com),
+[@solidjs/router](https://github.com/solidjs/solid-router) for routing, and
+[Tailwind CSS v4](https://tailwindcss.com) for styling. It only talks to the Go API over HTTP
+(default `http://localhost:8080`, override with `VITE_API_URL`).
 
-Currently, two official plugins are available:
+Commands (from `webapp/`, uses pnpm):
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- `pnpm dev` — dev server on :5173
+- `pnpm test` — vitest run (jsdom)
+- `pnpm build` — typecheck (tsc) + vite build
+- `pnpm lint` — oxlint

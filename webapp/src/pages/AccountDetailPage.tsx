@@ -1,18 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router";
-import { Badge, Box, Heading, HStack, List, Text, VStack, Card } from "@chakra-ui/react";
+import { createSignal, For, Show } from "solid-js";
+import { useParams } from "@solidjs/router";
 import type { Account, Investment, Movement } from "../api";
 import { getAccount, listInvestments, listMovements } from "../api";
 import { RouterLink } from "../components/RouterLink";
 
 export default function AccountDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const [account, setAccount] = useState<Account | null>(null);
-  const [movements, setMovements] = useState<Movement[]>([]);
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const params = useParams<{ id: string }>();
+  const [account, setAccount] = createSignal<Account | null>(null);
+  const [movements, setMovements] = createSignal<Movement[]>([]);
+  const [investments, setInvestments] = createSignal<Investment[]>([]);
+  const [error, setError] = createSignal<string | null>(null);
 
-  const reload = useCallback(async () => {
+  // the component body runs once on mount
+  void (async () => {
+    const id = params.id;
     if (!id) return;
     try {
       const [a, m, invs] = await Promise.all([getAccount(id), listMovements(id), listInvestments(id)]);
@@ -23,100 +24,76 @@ export default function AccountDetailPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [id]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
+  })();
 
   return (
-    <Box>
-      <HStack justify="space-between" mb={3}>
-        <Heading size="lg">{account ? account.name : "Account"}</Heading>
-        <RouterLink
-          to={`/accounts/${id}/movements/new`}
-          px="4"
-          py="2"
-          borderRadius="md"
-          bg="teal.500"
-          color="white"
-          _hover={{ bg: "teal.600" }}
-        >
+    <div>
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-xl font-semibold">{account() ? account()!.name : "Account"}</h2>
+        <RouterLink to={`/accounts/${params.id}/movements/new`} class="btn-primary">
           Add movement
         </RouterLink>
-      </HStack>
-      {account && (
-        <HStack gap={2} mb={4}>
-          <Badge colorPalette="gray">{account.type}</Badge>
-          <Badge colorPalette="purple">{account.currency}</Badge>
-        </HStack>
-      )}
-      {error && (
-        <Text color="fg.error" role="alert">
-          {error}
-        </Text>
-      )}
-      <VStack align="stretch" gap={2}>
-        <Heading size="md">Movements</Heading>
-        <List.Root gap={2}>
-          {movements.map((m) => (
-            <List.Item key={m.id}>
-              <Card.Root size="sm">
-                <Card.Body>
-                  <HStack justify="space-between">
-                    <Text fontWeight="medium">{m.description}</Text>
-                    <HStack gap={2}>
-                      <Badge colorPalette={m.type === "Credit" ? "green" : "red"}>{m.type}</Badge>
-                      <Text>
-                        {m.type === "Debit" ? "-" : "+"}
-                        {m.value}
-                      </Text>
-                    </HStack>
-                  </HStack>
-                </Card.Body>
-              </Card.Root>
-            </List.Item>
-          ))}
-        </List.Root>
-        <RouterLink to="/" color="fg.muted" alignSelf="start">
+      </div>
+      <Show when={account()}>
+        <div class="flex gap-2 mb-4">
+          <span class="badge">{account()!.type}</span>
+          <span class="badge badge-purple">{account()!.currency}</span>
+        </div>
+      </Show>
+      <Show when={error()}>
+        <p role="alert" class="text-red-500">
+          {error()}
+        </p>
+      </Show>
+      <div class="flex flex-col gap-2">
+        <h3 class="text-lg font-semibold">Movements</h3>
+        <ul class="flex flex-col gap-2">
+          <For each={movements()}>
+            {(m) => (
+              <li>
+                <div class="card flex justify-between items-center">
+                  <span class="font-medium">{m.description}</span>
+                  <span class="flex gap-2 items-center">
+                    <span class={m.type === "Credit" ? "badge badge-green" : "badge badge-red"}>{m.type}</span>
+                    <span>
+                      {m.type === "Debit" ? "-" : "+"}
+                      {m.value}
+                    </span>
+                  </span>
+                </div>
+              </li>
+            )}
+          </For>
+        </ul>
+        <RouterLink to="/" class="link-muted self-start">
           Back to accounts
         </RouterLink>
-      </VStack>
-      <VStack align="stretch" gap={2} mt={6}>
-        <HStack justify="space-between">
-          <Heading size="md">Investments</Heading>
-          <RouterLink
-            to={`/accounts/${id}/investments/new`}
-            px="4"
-            py="2"
-            borderRadius="md"
-            bg="teal.500"
-            color="white"
-            _hover={{ bg: "teal.600" }}
-          >
+      </div>
+      <div class="flex flex-col gap-2 mt-6">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold">Investments</h3>
+          <RouterLink to={`/accounts/${params.id}/investments/new`} class="btn-primary">
             New investment
           </RouterLink>
-        </HStack>
-        <List.Root gap={2}>
-          {investments.map((inv) => (
-            <List.Item key={inv.id}>
-              <Card.Root size="sm">
-                <Card.Body>
-                  <HStack justify="space-between">
-                    <RouterLink to={`/accounts/${id}/investments/${inv.id}`} fontWeight="medium" color="teal.500">
-                      {inv.name}
-                    </RouterLink>
-                    <HStack gap={2}>
-                      <Badge colorPalette="gray">{inv.type}</Badge>
-                      <Text>{inv.current_value}</Text>
-                    </HStack>
-                  </HStack>
-                </Card.Body>
-              </Card.Root>
-            </List.Item>
-          ))}
-        </List.Root>
-      </VStack>
-    </Box>
+        </div>
+        <ul class="flex flex-col gap-2">
+          <For each={investments()}>
+            {(inv) => (
+              <li>
+                <div class="card flex justify-between items-center">
+                  <RouterLink to={`/accounts/${params.id}/investments/${inv.id}`} class="link font-medium">
+                    {inv.name}
+                  </RouterLink>
+                  <span class="flex gap-2 items-center">
+                    <span class="badge">{inv.type}</span>
+                    <span>{inv.current_value}</span>
+                  </span>
+                </div>
+              </li>
+            )}
+          </For>
+        </ul>
+      </div>
+    </div>
   );
 }

@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
-import { AppRoutes } from "./App";
-import { Provider } from "./components/ui/provider";
+import { render, screen, fireEvent, waitFor } from "@solidjs/testing-library";
+import { createRouter, memoryHistory } from "@solidjs/router";
+import { routes } from "./App";
 import * as api from "./api";
 
 vi.mock("./api", async (importOriginal) => {
@@ -47,14 +46,13 @@ const investmentTransactions: api.InvestmentTransaction[] = [
 ];
 
 function renderAt(path: string) {
-  return render(
-    <Provider>
-      <MemoryRouter initialEntries={[path]}>
-        <AppRoutes />
-      </MemoryRouter>
-    </Provider>,
-  );
+  const Router = createRouter({ routes, history: memoryHistory(path) });
+  return render(() => <Router />);
 }
+
+// Solid 2.0 batches signal writes to a microtask; await one so form fields are
+// committed before the next interaction.
+const tick = () => Promise.resolve();
 
 beforeEach(() => {
   vi.mocked(api.listAccounts).mockResolvedValue(accounts);
@@ -81,8 +79,10 @@ describe("routing", () => {
     renderAt("/");
     fireEvent.click(await screen.findByRole("link", { name: /new account/i }));
 
-    fireEvent.change(await screen.findByLabelText(/name/i), { target: { value: "New Bank" } });
+    fireEvent.input(await screen.findByLabelText(/name/i), { target: { value: "New Bank" } });
+    await tick();
     fireEvent.change(screen.getByLabelText(/currency/i), { target: { value: "USD" } });
+    await tick();
     fireEvent.click(screen.getByRole("button", { name: /add account/i }));
 
     await waitFor(() => expect(api.createAccount).toHaveBeenCalled());
@@ -103,8 +103,10 @@ describe("routing", () => {
     renderAt("/accounts/1");
     fireEvent.click(await screen.findByRole("link", { name: /add movement/i }));
 
-    fireEvent.change(await screen.findByLabelText(/description/i), { target: { value: "Groceries" } });
-    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "25.99" } });
+    fireEvent.input(await screen.findByLabelText(/description/i), { target: { value: "Groceries" } });
+    await tick();
+    fireEvent.input(screen.getByLabelText(/amount/i), { target: { value: "25.99" } });
+    await tick();
     fireEvent.click(screen.getByRole("button", { name: /add movement/i }));
 
     await waitFor(() => expect(api.createMovement).toHaveBeenCalledWith("1", { description: "Groceries", value: "25.99", type: "Credit" }));
@@ -123,7 +125,8 @@ describe("routing", () => {
     renderAt("/accounts/1");
     fireEvent.click(await screen.findByRole("link", { name: /new investment/i }));
 
-    fireEvent.change(await screen.findByLabelText(/name/i), { target: { value: "New ETF" } });
+    fireEvent.input(await screen.findByLabelText(/name/i), { target: { value: "New ETF" } });
+    await tick();
     fireEvent.click(screen.getByRole("button", { name: /add investment/i }));
 
     await waitFor(() => expect(api.createInvestment).toHaveBeenCalledWith("1", { name: "New ETF", type: "ETF", currency: "USD" }));
@@ -144,8 +147,11 @@ describe("routing", () => {
     fireEvent.click(await screen.findByRole("link", { name: /add transaction/i }));
 
     fireEvent.change(await screen.findByLabelText(/transaction type/i), { target: { value: "Deposit" } });
-    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "500.00" } });
-    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: "Deposit" } });
+    await tick();
+    fireEvent.input(screen.getByLabelText(/amount/i), { target: { value: "500.00" } });
+    await tick();
+    fireEvent.input(screen.getByLabelText(/description/i), { target: { value: "Deposit" } });
+    await tick();
     fireEvent.click(screen.getByRole("button", { name: /add transaction/i }));
 
     await waitFor(() =>
@@ -166,8 +172,11 @@ describe("routing", () => {
     fireEvent.click(await screen.findByRole("link", { name: /add transaction/i }));
 
     fireEvent.change(await screen.findByLabelText(/transaction type/i), { target: { value: "Buy" } });
-    fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: "10" } });
-    fireEvent.change(screen.getByLabelText(/price/i), { target: { value: "100.00" } });
+    await tick();
+    fireEvent.input(screen.getByLabelText(/quantity/i), { target: { value: "10" } });
+    await tick();
+    fireEvent.input(screen.getByLabelText(/price/i), { target: { value: "100.00" } });
+    await tick();
     fireEvent.click(screen.getByRole("button", { name: /add transaction/i }));
 
     await waitFor(() =>
