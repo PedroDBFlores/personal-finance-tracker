@@ -19,7 +19,10 @@ func NewCreateInvestmentUseCase(creator usecases.InvestmentCreator, logger *slog
 }
 
 func (u *CreateInvestmentUseCase) Execute(ctx context.Context, accountId domain.Id, dto dtos.CreateInvestmentDto) (*domain.Id, error) {
-	investment := domain.NewInvestment(0, accountId, dto.Name, dto.Type, dto.Currency, dto.PurchaseDate, dto.MaturityDate)
+	investment, err := domain.NewInvestment(0, accountId, dto.Name, dto.Type, dto.Currency, dto.PurchaseDate, dto.MaturityDate)
+	if err != nil {
+		return nil, err
+	}
 	u.logger.DebugContext(ctx, "calling investment creator", slog.Any("investment", investment))
 	return u.creator.Create(ctx, accountId, investment)
 }

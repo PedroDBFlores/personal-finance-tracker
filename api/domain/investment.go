@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strings"
 	"time"
 )
 
@@ -27,6 +28,8 @@ type Investment struct {
 
 // NewInvestment creates a new Investment based on the provided parameters.
 // CurrentValue is calculated from transactions, so it starts at zero.
+// It returns a ValidationError if the name is empty, the investment type or
+// currency is not supported, or the maturity date is before the purchase date.
 func NewInvestment(
 	id Id,
 	accountId Id,
@@ -35,7 +38,23 @@ func NewInvestment(
 	currency Currency,
 	purchaseDate time.Time,
 	maturityDate *time.Time,
-) Investment {
+) (Investment, error) {
+	if strings.TrimSpace(name) == "" {
+		return Investment{}, newValidationError("investment name is required")
+	}
+	switch investmentType {
+	case ETF, Savings, TermDeposit:
+	default:
+		return Investment{}, newValidationError("unsupported investment type %q", investmentType)
+	}
+	switch currency {
+	case CurrencyUSD, CurrencyEUR, CurrencyGBP:
+	default:
+		return Investment{}, newValidationError("unsupported currency %q", currency)
+	}
+	if maturityDate != nil && maturityDate.Before(purchaseDate) {
+		return Investment{}, newValidationError("maturity date must not be before the purchase date")
+	}
 	return Investment{
 		Id:           id,
 		AccountId:    accountId,
@@ -45,7 +64,7 @@ func NewInvestment(
 		Currency:     currency,
 		PurchaseDate: purchaseDate,
 		MaturityDate: maturityDate,
-	}
+	}, nil
 }
 
 // UpdateCurrentValue recalculates the CurrentValue based on the given transactions.

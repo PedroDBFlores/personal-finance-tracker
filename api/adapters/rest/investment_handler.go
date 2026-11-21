@@ -128,7 +128,11 @@ func (h *InvestmentHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeUsecaseError(w, err)
 		return
 	}
-	inv := domain.NewInvestment(*id, accountId, req.Name, investmentType, domain.Currency(req.Currency), purchaseDate, req.MaturityDate)
+	inv, err := domain.NewInvestment(*id, accountId, req.Name, investmentType, domain.Currency(req.Currency), purchaseDate, req.MaturityDate)
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
 	writeJSON(w, http.StatusCreated, toInvestmentResponse(dtos.NewInvestmentDto(inv)))
 }
 

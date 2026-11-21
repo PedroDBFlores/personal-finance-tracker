@@ -25,9 +25,9 @@ func TestListMovementsByMonthUseCase(t *testing.T) {
 		accountGetter := &usecasesfakes.FakeAccountGetter{}
 		byMonthLister := &usecasesfakes.FakeMovementByMonthLister{}
 
-		acc := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now)
+		acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now); require.NoError(t, err)
 		accountGetter.GetReturns(&acc, nil)
-		mov := domain.NewMovement(1, "Salary", domain.Money(100000), domain.MovementTypeCredit, now)
+		mov, err := domain.NewMovement(1, "Salary", domain.Money(100000), domain.MovementTypeCredit, now); require.NoError(t, err)
 		mov.Id = 7
 		byMonthLister.ListByMonthReturns([]domain.Movement{mov}, nil)
 
@@ -63,7 +63,7 @@ func TestListMovementsByMonthUseCase(t *testing.T) {
 		accountGetter := &usecasesfakes.FakeAccountGetter{}
 		byMonthLister := &usecasesfakes.FakeMovementByMonthLister{}
 
-		acc := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now)
+		acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now); require.NoError(t, err)
 		accountGetter.GetReturns(&acc, nil)
 		byMonthLister.ListByMonthReturns(nil, errors.New("db down"))
 

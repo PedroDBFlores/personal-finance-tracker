@@ -19,11 +19,9 @@ func NewCreateAccountUseCase(creator usecases.AccountCreator, logger *slog.Logge
 }
 
 func (u *CreateAccountUseCase) Execute(ctx context.Context, dto dtos.CreateAccountDto) (*domain.Id, error) {
-	account := domain.Account{
-		Name:      dto.Name,
-		Type:      domain.AccountType(dto.Type),
-		Currency:  dto.Currency,
-		CreatedAt: dto.CreatedAt,
+	account, err := domain.NewAccount(0, dto.Name, dto.Type, dto.Currency, dto.CreatedAt)
+	if err != nil {
+		return nil, err
 	}
 	u.logger.DebugContext(ctx, "calling account creator", slog.Any("account", account))
 	return u.creator.Create(ctx, account)

@@ -31,13 +31,19 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 		accountId, err := accRepo.Create(ctx, baseAccount)
 		require.NoError(t, err)
 		invRepo := database.NewInvestmentRepository(db)
-		investmentId, err := invRepo.Create(ctx, *accountId, domain.NewInvestment(0, *accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil))
+		inv, err := domain.NewInvestment(0, *accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil)
+		require.NoError(t, err)
+		investmentId, err := invRepo.Create(ctx, *accountId, inv)
 		require.NoError(t, err)
 		return *accountId, *investmentId, invRepo, database.NewInvestmentTransactionRepository(db)
 	}
 
 	newTx := func(investmentId domain.Id) domain.InvestmentTransaction {
-		return domain.NewInvestmentTransaction(0, investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Initial Buy")
+		tx, err := domain.NewInvestmentTransaction(0, investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Initial Buy")
+		if err != nil {
+			panic(err)
+		}
+		return tx
 	}
 
 	t.Run("it creates a transaction in the database", func(t *testing.T) {
@@ -136,7 +142,9 @@ func TestInvestmentTransactionRepository(t *testing.T) {
 		accountId, investmentId, _, repo := setup(t)
 		firstId, err := repo.Create(ctx, accountId, investmentId, newTx(investmentId))
 		require.NoError(t, err)
-		secondId, err := repo.Create(ctx, accountId, investmentId, domain.NewInvestmentTransaction(0, investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), time.Now(), "Sell"))
+		sell, err := domain.NewInvestmentTransaction(0, investmentId, domain.Sell, 0, domain.Money(200), domain.Money(12000), time.Now(), "Sell")
+		require.NoError(t, err)
+		secondId, err := repo.Create(ctx, accountId, investmentId, sell)
 		require.NoError(t, err)
 
 		txs, err := repo.List(ctx, accountId, investmentId)

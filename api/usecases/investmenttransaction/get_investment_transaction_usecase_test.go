@@ -23,7 +23,7 @@ func TestGetInvestmentTransactionUseCase(t *testing.T) {
 
 	t.Run("returns the transaction", func(t *testing.T) {
 		getter := usecasesfakes.FakeInvestmentTransactionGetter{}
-		tx := domain.NewInvestmentTransaction(txId, investmentId, domain.Deposit, domain.Money(50000), 0, 0, time.Now(), "Deposit")
+		tx, err := domain.NewInvestmentTransaction(txId, investmentId, domain.Deposit, domain.Money(50000), 0, 0, time.Now(), "Deposit"); require.NoError(t, err)
 		getter.GetReturns(&tx, nil)
 		useCase := investmenttransaction.NewGetInvestmentTransactionUseCase(&getter, logger)
 

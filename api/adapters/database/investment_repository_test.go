@@ -24,7 +24,11 @@ func TestInvestmentRepository(t *testing.T) {
 	}
 
 	newInvestment := func(accountId domain.Id) domain.Investment {
-		return domain.NewInvestment(0, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil)
+		inv, err := domain.NewInvestment(0, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil)
+		if err != nil {
+			panic(err)
+		}
+		return inv
 	}
 
 	t.Run("it creates an investment in the database", func(t *testing.T) {
@@ -118,7 +122,9 @@ func TestInvestmentRepository(t *testing.T) {
 		repo := database.NewInvestmentRepository(db)
 		firstId, err := repo.Create(ctx, *accountId, newInvestment(*accountId))
 		require.NoError(t, err)
-		secondId, err := repo.Create(ctx, *accountId, domain.NewInvestment(0, *accountId, "Savings", domain.Savings, domain.CurrencyUSD, time.Now(), nil))
+		savings, err := domain.NewInvestment(0, *accountId, "Savings", domain.Savings, domain.CurrencyUSD, time.Now(), nil)
+		require.NoError(t, err)
+		secondId, err := repo.Create(ctx, *accountId, savings)
 		require.NoError(t, err)
 
 		investments, err := repo.List(ctx, *accountId)

@@ -21,7 +21,7 @@ func TestGetInvestmentUseCase(t *testing.T) {
 	investmentId := domain.NewId()
 
 	sampleInvestment := func() domain.Investment {
-		inv := domain.NewInvestment(investmentId, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil)
+		inv, err := domain.NewInvestment(investmentId, accountId, "Vanguard ETF", domain.ETF, domain.CurrencyUSD, time.Now(), nil); require.NoError(t, err)
 		return inv
 	}
 
@@ -30,7 +30,7 @@ func TestGetInvestmentUseCase(t *testing.T) {
 		txLister := usecasesfakes.FakeInvestmentTransactionLister{}
 		inv := sampleInvestment()
 		getter.GetReturns(&inv, nil)
-		buy := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy")
+		buy, err := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Now(), "Buy"); require.NoError(t, err)
 		txLister.ListReturns([]domain.InvestmentTransaction{buy}, nil)
 		useCase := investment.NewGetInvestmentUseCase(&getter, &txLister, logger)
 

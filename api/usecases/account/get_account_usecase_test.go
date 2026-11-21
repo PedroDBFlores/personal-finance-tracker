@@ -21,7 +21,7 @@ func TestGetAccountUseCase(t *testing.T) {
 
 	t.Run("gets an account by it's id", func(t *testing.T) {
 		accountGetter := usecasesfakes.FakeAccountGetter{}
-		acc := domain.NewAccount(domain.NewId(), "Bank Bank", domain.AccountTypeBank, domain.CurrencyEUR, time.Now())
+		acc, err := domain.NewAccount(domain.NewId(), "Bank Bank", domain.AccountTypeBank, domain.CurrencyEUR, time.Now()); require.NoError(t, err)
 		dto := dtos.NewAccountDto(acc)
 		accountGetter.GetReturns(&acc, nil)
 		useCase := account.NewGetAccountUseCase(&accountGetter, logger)

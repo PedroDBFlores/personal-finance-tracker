@@ -133,8 +133,12 @@ func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeUsecaseError(w, err)
 		return
 	}
-	acc := dtos.NewAccountDto(domain.NewAccount(*id, req.Name, domain.AccountType(req.Type), domain.Currency(req.Currency), dto.CreatedAt))
-	writeJSON(w, http.StatusCreated, toAccountResponse(acc))
+	acc, err := domain.NewAccount(*id, req.Name, domain.AccountType(req.Type), domain.Currency(req.Currency), dto.CreatedAt)
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, toAccountResponse(dtos.NewAccountDto(acc)))
 }
 
 func (h *AccountHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -249,6 +253,11 @@ func writeUsecaseError(w http.ResponseWriter, err error) {
 	var notFound app_errors.ResourceNotFoundError
 	if errors.As(err, &notFound) {
 		writeError(w, http.StatusNotFound, notFound.Error())
+		return
+	}
+	var validation domain.ValidationError
+	if errors.As(err, &validation) {
+		writeError(w, http.StatusBadRequest, validation.Error())
 		return
 	}
 	writeError(w, http.StatusInternalServerError, err.Error())

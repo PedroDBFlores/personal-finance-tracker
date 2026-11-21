@@ -23,9 +23,9 @@ func TestListInvestmentsUseCase(t *testing.T) {
 		lister := usecasesfakes.FakeInvestmentLister{}
 		txLister := usecasesfakes.FakeInvestmentTransactionLister{}
 		invId := domain.NewId()
-		inv := domain.NewInvestment(invId, accountId, "Savings", domain.Savings, domain.CurrencyUSD, time.Now(), nil)
+		inv, err := domain.NewInvestment(invId, accountId, "Savings", domain.Savings, domain.CurrencyUSD, time.Now(), nil); require.NoError(t, err)
 		lister.ListReturns([]domain.Investment{inv}, nil)
-		deposit := domain.NewInvestmentTransaction(domain.NewId(), invId, domain.Deposit, domain.Money(50000), 0, 0, time.Now(), "Deposit")
+		deposit, err := domain.NewInvestmentTransaction(domain.NewId(), invId, domain.Deposit, domain.Money(50000), 0, 0, time.Now(), "Deposit"); require.NoError(t, err)
 		txLister.ListReturns([]domain.InvestmentTransaction{deposit}, nil)
 		useCase := investment.NewListInvestmentsUseCase(&lister, &txLister, logger)
 

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strings"
 	"time"
 )
 
@@ -20,15 +21,28 @@ type Movement struct {
 	Date time.Time
 }
 
-// NewMovement creates a new Movement based on the provided parameters
-func NewMovement(accountId Id, description string, value Money, movementType MovementType, date time.Time) Movement {
+// NewMovement creates a new Movement based on the provided parameters.
+// It returns a ValidationError if the description is empty, the movement type
+// is not supported, or the value is negative.
+func NewMovement(accountId Id, description string, value Money, movementType MovementType, date time.Time) (Movement, error) {
+	if strings.TrimSpace(description) == "" {
+		return Movement{}, newValidationError("movement description is required")
+	}
+	switch movementType {
+	case MovementTypeCredit, MovementTypeDebit:
+	default:
+		return Movement{}, newValidationError("unsupported movement type %q", movementType)
+	}
+	if value < 0 {
+		return Movement{}, newValidationError("movement value must not be negative")
+	}
 	return Movement{
 		AccountId:   accountId,
 		Description: description,
 		Value:       value,
 		Type:        movementType,
 		Date:        date,
-	}
+	}, nil
 }
 
 // MovementPatch represents the fields to modify on a Movement. Nil fields are left unchanged.

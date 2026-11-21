@@ -30,6 +30,9 @@ type InvestmentTransaction struct {
 // NewInvestmentTransaction creates a new InvestmentTransaction based on the provided parameters.
 // For Deposit/Withdraw, use Amount and set Quantity/Price to 0.
 // For Buy/Sell, use Quantity and Price.
+// It returns a ValidationError if the transaction type is not supported, an
+// amount/quantity/price is negative, Deposit/Withdraw has no amount, or
+// Buy/Sell is missing quantity or price.
 func NewInvestmentTransaction(
 	id Id,
 	investmentId Id,
@@ -39,7 +42,25 @@ func NewInvestmentTransaction(
 	price Money,
 	date time.Time,
 	description string,
-) InvestmentTransaction {
+) (InvestmentTransaction, error) {
+	switch txType {
+	case Buy, Sell, Deposit, Withdraw:
+	default:
+		return InvestmentTransaction{}, newValidationError("unsupported transaction type %q", txType)
+	}
+	if amount < 0 || quantity < 0 || price < 0 {
+		return InvestmentTransaction{}, newValidationError("amount, quantity and price must not be negative")
+	}
+	switch txType {
+	case Deposit, Withdraw:
+		if amount == 0 {
+			return InvestmentTransaction{}, newValidationError("%s requires a non-zero amount", txType)
+		}
+	case Buy, Sell:
+		if quantity == 0 || price == 0 {
+			return InvestmentTransaction{}, newValidationError("%s requires a non-zero quantity and price", txType)
+		}
+	}
 	return InvestmentTransaction{
 		Id:           id,
 		InvestmentId: investmentId,
@@ -49,7 +70,7 @@ func NewInvestmentTransaction(
 		Price:        price,
 		Date:         date,
 		Description:  description,
-	}
+	}, nil
 }
 
 // InvestmentTransactionPatch represents the fields to modify on an InvestmentTransaction.

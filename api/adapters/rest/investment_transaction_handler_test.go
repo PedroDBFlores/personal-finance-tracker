@@ -29,7 +29,11 @@ func newInvestmentTransactionRouter(creator *usecasesfakes.FakeInvestmentTransac
 }
 
 func sampleTransaction(investmentId domain.Id) domain.InvestmentTransaction {
-	return domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC), "Initial Buy")
+	tx, err := domain.NewInvestmentTransaction(domain.NewId(), investmentId, domain.Buy, 0, domain.Money(1000), domain.Money(10000), time.Date(2024, 1, 2, 3, 4, 5, 0, time.UTC), "Initial Buy")
+	if err != nil {
+		panic(err)
+	}
+	return tx
 }
 
 func TestInvestmentTransactionHandlerCreate(t *testing.T) {
@@ -230,5 +234,23 @@ func TestInvestmentTransactionHandlerDelete(t *testing.T) {
 
 		rec := doRequest(t, r, http.MethodDelete, "/accounts/2/investments/"+investmentId.String()+"/transactions/"+txId.String(), nil)
 		require.Equal(t, http.StatusNotFound, rec.Code)
+	})
+}
+
+func TestInvestmentTransactionHandlerValidation(t *testing.T) {
+	t.Run("returns 400 for a buy without quantity and price", func(t *testing.T) {
+		creator := &usecasesfakes.FakeInvestmentTransactionCreator{}
+		logger := testLogger()
+		createUC := investmenttransaction.NewCreateInvestmentTransactionUseCase(creator, logger)
+		h := rest.NewInvestmentTransactionHandler(&createUC, nil, nil, nil, nil, logger)
+		mux := http.NewServeMux()
+		h.Register(mux, "/accounts/{accountId}/investments/{investmentId}/transactions")
+
+		rec := doRequest(t, mux, http.MethodPost, "/accounts/1/investments/2/transactions", map[string]string{
+			"type": "Buy", "amount": "0.00", "quantity": "", "price": "", "description": "",
+		})
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Equal(t, 0, creator.CreateCallCount())
 	})
 }

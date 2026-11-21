@@ -25,7 +25,7 @@ func TestListMovementMonthsUseCase(t *testing.T) {
 		accountGetter := &usecasesfakes.FakeAccountGetter{}
 		monthLister := &usecasesfakes.FakeMovementMonthLister{}
 
-		acc := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now)
+		acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now); require.NoError(t, err)
 		accountGetter.GetReturns(&acc, nil)
 		months := []domain.YearMonth{{Year: 2025, Month: 2}, {Year: 2025, Month: 1}}
 		monthLister.ListMonthsReturns(months, nil)
@@ -49,7 +49,7 @@ func TestListMovementMonthsUseCase(t *testing.T) {
 		accountGetter := &usecasesfakes.FakeAccountGetter{}
 		monthLister := &usecasesfakes.FakeMovementMonthLister{}
 
-		acc := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now)
+		acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now); require.NoError(t, err)
 		accountGetter.GetReturns(&acc, nil)
 		monthLister.ListMonthsReturns([]domain.YearMonth{}, nil)
 
@@ -79,7 +79,7 @@ func TestListMovementMonthsUseCase(t *testing.T) {
 		accountGetter := &usecasesfakes.FakeAccountGetter{}
 		monthLister := &usecasesfakes.FakeMovementMonthLister{}
 
-		acc := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now)
+		acc, err := domain.NewAccount(1, "Bank A", domain.AccountTypeBank, domain.CurrencyEUR, now); require.NoError(t, err)
 		accountGetter.GetReturns(&acc, nil)
 		monthLister.ListMonthsReturns(nil, errors.New("db down"))
 

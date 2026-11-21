@@ -23,8 +23,8 @@ func TestListMovementsUseCase(t *testing.T) {
 	t.Run("lists movements of an account", func(t *testing.T) {
 		lister := usecasesfakes.FakeMovementLister{}
 		movements := []domain.Movement{
-			func() domain.Movement { m := domain.NewMovement(accountId, "Salary", domain.Money(100000), domain.MovementTypeCredit, time.Now()); m.Id = 1; return m }(),
-			func() domain.Movement { m := domain.NewMovement(accountId, "Groceries", domain.Money(2599), domain.MovementTypeDebit, time.Now()); m.Id = 2; return m }(),
+			func() domain.Movement { m, err := domain.NewMovement(accountId, "Salary", domain.Money(100000), domain.MovementTypeCredit, time.Now()); require.NoError(t, err); m.Id = 1; return m }(),
+			func() domain.Movement { m, err := domain.NewMovement(accountId, "Groceries", domain.Money(2599), domain.MovementTypeDebit, time.Now()); require.NoError(t, err); m.Id = 2; return m }(),
 		}
 		lister.ListReturns(movements, nil)
 		useCase := movement.NewListMovementsUseCase(&lister, logger)
