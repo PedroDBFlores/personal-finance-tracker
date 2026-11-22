@@ -65,7 +65,7 @@ export default function InvestmentDetailPage() {
                       left={<span class="font-medium">{tx.description || tx.type}</span>}
                       right={
                         <>
-                          <Badge>{tx.type}</Badge>
+                          <Badge tone={tx.type === "Buy" || tx.type === "Deposit" ? "green" : "red"}>{tx.type}</Badge>
                           <span>
                             {tx.type === "Deposit" || tx.type === "Buy" ? "+" : tx.type === "Withdraw" || tx.type === "Sell" ? "-" : ""}
                             {tx.type === "Deposit" || tx.type === "Withdraw" ? tx.amount : `${tx.quantity} @ ${tx.price}`}

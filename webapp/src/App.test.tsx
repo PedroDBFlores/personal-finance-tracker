@@ -172,6 +172,21 @@ describe("routing", () => {
     expect(api.listInvestmentTransactions).toHaveBeenCalledWith("1", "inv-1");
   });
 
+  it("color-codes transaction type pills: Buy/Deposit green, Sell/Withdraw red", async () => {
+    vi.mocked(api.listInvestmentTransactions).mockResolvedValue([
+      { id: "tx-1", investment_id: "inv-1", type: "Buy", amount: "0.00", quantity: "10.00", price: "100.00", date: "2024-01-02T03:04:05Z", description: "Buy tx" },
+      { id: "tx-2", investment_id: "inv-1", type: "Sell", amount: "0.00", quantity: "5.00", price: "110.00", date: "2024-01-03T03:04:05Z", description: "Sell tx" },
+      { id: "tx-3", investment_id: "inv-1", type: "Deposit", amount: "500.00", quantity: "0.00", price: "0.00", date: "2024-01-04T03:04:05Z", description: "Deposit tx" },
+      { id: "tx-4", investment_id: "inv-1", type: "Withdraw", amount: "200.00", quantity: "0.00", price: "0.00", date: "2024-01-05T03:04:05Z", description: "Withdraw tx" },
+    ]);
+    renderAt("/accounts/1/investments/inv-1");
+
+    expect(await screen.findByText("Buy")).toHaveClass("badge-green");
+    expect(screen.getByText("Sell")).toHaveClass("badge-red");
+    expect(screen.getByText("Deposit")).toHaveClass("badge-green");
+    expect(screen.getByText("Withdraw")).toHaveClass("badge-red");
+  });
+
   it("navigates from investment detail to the new-transaction page, creates, and returns", async () => {
     renderAt("/accounts/1/investments/inv-1");
     fireEvent.click(await screen.findByRole("link", { name: /add transaction/i }));
