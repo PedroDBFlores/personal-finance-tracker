@@ -14,6 +14,8 @@ vi.mock("./api", async (importOriginal) => {
     createAccount: vi.fn(),
     listMovements: vi.fn(),
     createMovement: vi.fn(),
+    listMovementMonths: vi.fn(),
+    listMovementsByMonth: vi.fn(),
     listInvestments: vi.fn(),
     getInvestment: vi.fn(),
     createInvestment: vi.fn(),
@@ -70,6 +72,8 @@ beforeEach(() => {
   vi.mocked(api.createAccount).mockResolvedValue(accounts[0]);
   vi.mocked(api.listMovements).mockResolvedValue(movements);
   vi.mocked(api.createMovement).mockResolvedValue(movements[0]);
+  vi.mocked(api.listMovementMonths).mockResolvedValue([{ year: 2024, month: 1 }]);
+  vi.mocked(api.listMovementsByMonth).mockResolvedValue(movements);
   vi.mocked(api.listInvestments).mockResolvedValue([investment]);
   vi.mocked(api.getInvestment).mockResolvedValue(investment);
   vi.mocked(api.createInvestment).mockResolvedValue(investment);
@@ -116,12 +120,13 @@ describe("routing", () => {
     await waitFor(() => expect(api.listAccounts).toHaveBeenCalledTimes(2));
   });
 
-  it("account detail page shows movements", async () => {
+  it("account detail page shows movements via the month browser", async () => {
     renderAt("/accounts/1");
 
     expect(await screen.findByText(/Salary/)).toBeInTheDocument();
     expect(api.getAccount).toHaveBeenCalledWith("1");
-    expect(api.listMovements).toHaveBeenCalledWith("1");
+    expect(api.listMovementMonths).toHaveBeenCalledWith("1");
+    expect(api.listMovementsByMonth).toHaveBeenCalledWith("1", 2024, 1);
   });
 
   it("navigates from detail to the new-movement page, creates, and returns", async () => {
@@ -135,8 +140,8 @@ describe("routing", () => {
     fireEvent.click(screen.getByRole("button", { name: /add movement/i }));
 
     await waitFor(() => expect(api.createMovement).toHaveBeenCalledWith("1", { description: "Groceries", value: "25.99", type: "Credit" }));
-    // back on the detail page, movements reloaded
-    await waitFor(() => expect(api.listMovements).toHaveBeenCalledTimes(2));
+    // back on the detail page, the month browser reloads
+    await waitFor(() => expect(api.listMovementMonths).toHaveBeenCalledTimes(2));
   });
 
   it("account detail page also lists investments", async () => {

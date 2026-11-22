@@ -107,6 +107,19 @@ export function createMovement(accountId: string, input: CreateMovementInput): P
   });
 }
 
+export interface MovementMonth {
+  year: number;
+  month: number; // 1-based
+}
+
+export function listMovementMonths(accountId: string): Promise<MovementMonth[]> {
+  return request<MovementMonth[]>(`/accounts/${accountId}/movements/months`);
+}
+
+export function listMovementsByMonth(accountId: string, year: number, month: number): Promise<Movement[]> {
+  return request<Movement[]>(`/accounts/${accountId}/movements/by-month/${year}/${month}`);
+}
+
 export interface Investment {
   id: string;
   account_id: string;
