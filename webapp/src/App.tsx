@@ -30,7 +30,7 @@ export default function App() {
   return (
     <div>
       <NavBar />
-      <main class="max-w-3xl mx-auto px-4 py-8">
+      <main class="max-w mx-auto px-4 py-8">
         <AppRoutes />
       </main>
     </div>

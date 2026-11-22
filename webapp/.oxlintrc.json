@@ -1,4 +1,10 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "oxc"]
+  "plugins": [
+    "typescript",
+    "oxc"
+  ],
+  "jsPlugins": [
+    "./node_modules/oxlint-plugin-solidjs/dist/index.js"
+  ],
 }

@@ -24,6 +24,7 @@
     "@types/node": "^24.19.2",
     "jsdom": "^31.0.1",
     "oxlint": "^1.94.0",
+    "oxlint-plugin-solidjs": "^0.2.1",
     "tailwindcss": "^4.3.5",
     "typescript": "~7.0.2",
     "vite": "^8.3.8",
