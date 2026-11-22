@@ -8,6 +8,8 @@ import {
   deleteAccount,
   listMovements,
   createMovement,
+  listMovementMonths,
+  listMovementsByMonth,
   listInvestments,
   getInvestment,
   createInvestment,
@@ -123,6 +125,26 @@ describe("api client", () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe(`${base}/accounts/2/movements`);
     expect(init.method).toBe("POST");
+  });
+
+  it("lists the movement months of an account", async () => {
+    const months = [{ year: 2025, month: 2 }, { year: 2025, month: 1 }];
+    const fetchMock = mockFetchOnce(200, months);
+
+    const result = await listMovementMonths("1");
+
+    expect(result).toEqual(months);
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts/1/movements/months`, expect.anything());
+  });
+
+  it("lists the movements of an account for a year/month", async () => {
+    const movements = [{ id: "1", account_id: "1", description: "Salary", value: "1000.00", type: "Credit", date: "2025-01-02T03:04:05Z" }];
+    const fetchMock = mockFetchOnce(200, movements);
+
+    const result = await listMovementsByMonth("1", 2025, 1);
+
+    expect(result).toEqual(movements);
+    expect(fetchMock).toHaveBeenCalledWith(`${base}/accounts/1/movements/by-month/2025/1`, expect.anything());
   });
 
   it("lists investments of an account", async () => {
