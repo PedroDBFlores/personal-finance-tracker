@@ -17,7 +17,11 @@ import (
 )
 
 func main() {
-	db, err := gorm.Open(sqlite.Open("tracker.db"), &gorm.Config{})
+	dbPath, ok := os.LookupEnv("DB_PATH")
+	if !ok {
+		dbPath = "tracker.db"
+	}
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to open database: %v\n", err)
 		os.Exit(1)
